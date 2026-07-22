@@ -1,0 +1,78 @@
+name: boker
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  carousel_slider: ^5.1.2
+  smooth_page_indicator: ^2.0.1
+  device_preview: ^1.3.1
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  go_router: ^17.0.0
+  google_fonts: ^6.3.3
+  easy_localization: ^3.0.8
+  flutter_bloc: ^9.1.1
+  bloc: ^9.1.0
+  get_it: ^8.0.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+  flutter_native_splash: ^2.4.8
+  dartz: ^0.10.1
+  intl: ^0.20.2
+  dio: ^5.9.2
+  jiffy: ^6.4.0
+  shimmer: ^3.0.0
+  local_auth: ^2.3.0
+  intl_phone_field:
+    git: https://github.com/abdelrahman0606/intl_phone_field.git
+  shared_preferences: ^2.5.4
+  flutter_secure_storage: ^9.2.4
+  pretty_dio_logger: ^1.4.0
+  flutter_animate: ^4.5.2
+  isar_plus: ^1.2.2
+  isar_plus_flutter_libs: ^1.2.2
+  path_provider: ^2.1.2
+  cached_network_image: ^3.4.1
+  webview_flutter: ^4.0.7
+  res_reline:
+    path: D:\projects\res_reline
+  file_picker: ^11.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  freezed: ^3.2.3
+  build_runner: ^2.4.6
+  injectable_generator: ^2.9.1
+  json_serializable: ^6.11.2
+  envied_generator: ^1.3.2
+
+flutter_native_splash:
+  ios: true
+  android: true
+  web: true
+  color: '#22409A'
+  color_dark: '#22409A'
+  image: assets/logo_2.png
+  image_dark: assets/logo_2.png
+  icon_background_color: "#FFFFFF"
+  icon_background_color_dark: "#FFFFFF"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/translations/ar-SA.json
+    - assets/translations/en-US.json
+    - assets/logo.png
+    - assets/on_boarding/on_boarding_1.png
+    - assets/on_boarding/on_boarding_2.png
+    - assets/on_boarding/on_boarding_3.png
+    - assets/flags/
