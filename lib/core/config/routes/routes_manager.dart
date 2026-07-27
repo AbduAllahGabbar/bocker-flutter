@@ -10,6 +10,17 @@ import '../../../features/profile/presentation/pages/profile_page.dart';
 import '../../../features/profile/presentation/pages/settings_page.dart';
 import '../../../features/profile/presentation/pages/language_page.dart';
 import '../../../features/profile/presentation/pages/about_app_page.dart';
+import '../../../features/profile/presentation/pages/verification_status_page.dart';
+import '../../../features/profile/presentation/pages/agreements_page.dart';
+import '../../../features/profile/presentation/pages/chat_page.dart';
+import '../../../features/profile/presentation/pages/help_center_page.dart';
+import '../../../features/profile/presentation/pages/create_ticket_page.dart';
+import '../../../features/profile/presentation/pages/ticket_details_page.dart';
+import '../../../features/profile/presentation/cubit/edit_form/edit_form_cubit.dart';
+import '../../../features/profile/data/repositories/verification_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../features/profile/presentation/pages/edit_identity_page.dart';
+import '../../../features/profile/presentation/pages/edit_address_page.dart';
 
 class RoutesNames {
   const RoutesNames._();
@@ -20,6 +31,14 @@ class RoutesNames {
   static const String forgotPassword = "forgot-password";
   static const String loginCallback = "login-callback";
   static const String identityVerification = "identity-verification";
+  static const String verificationStatus = "verification-status";
+  static const String editIdentity = "edit-identity";
+  static const String editAddress = "edit-address";
+  static const String agreements = "agreements";
+  static const String supportChat = "support-chat";
+  static const String helpCenter = "help-center";
+  static const String createTicket = "create-ticket";
+  static const String ticketDetails = "ticket-details";
 
   static const String home = "home";
   static const String checkout = "checkout";
@@ -211,6 +230,111 @@ class RouterManger {
             context: context,
             state: state,
             child: const AboutAppPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.verificationStatus,
+        name: RoutesNames.verificationStatus,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const VerificationStatusPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.editIdentity,
+        name: RoutesNames.editIdentity,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => EditFormCubit(VerificationRepository()),
+              child: EditIdentityPage(initialForm: extra),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.editAddress,
+        name: RoutesNames.editAddress,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => EditFormCubit(VerificationRepository()),
+              child: EditAddressPage(initialForm: extra),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.agreements,
+        name: RoutesNames.agreements,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const AgreementsPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.supportChat,
+        name: RoutesNames.supportChat,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const ChatPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.helpCenter,
+        name: RoutesNames.helpCenter,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const HelpCenterPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.createTicket,
+        name: RoutesNames.createTicket,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const CreateTicketPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.ticketDetails,
+        name: RoutesNames.ticketDetails,
+        pageBuilder: (context, state) {
+          final ticket = state.extra as Map<String, dynamic>;
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: TicketDetailsPage(ticket: ticket),
           );
         },
       ),

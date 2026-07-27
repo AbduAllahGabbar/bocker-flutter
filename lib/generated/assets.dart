@@ -4,6 +4,33 @@ import 'package:flutter/widgets.dart';
 
 class Assets {
   Assets._();
+
+  static const String arSA = 'assets/translations/ar-SA.json';
+  static const String enUS = 'assets/translations/en-US.json';
+  static const AssetGenImage logo = AssetGenImage('assets/logo.png');
+  static const AssetGenImage onBoarding1 = AssetGenImage(
+    'assets/on_boarding/on_boarding_1.png',
+  );
+  static const AssetGenImage onBoarding2 = AssetGenImage(
+    'assets/on_boarding/on_boarding_2.png',
+  );
+  static const AssetGenImage onBoarding3 = AssetGenImage(
+    'assets/on_boarding/on_boarding_3.png',
+  );
+  static const $AssetsAssetsGen assets = $AssetsAssetsGen();
+}
+
+class $AssetsAssetsGen {
+  const $AssetsAssetsGen();
+
+  final $AssetsFlagsGen flags = const $AssetsFlagsGen();
+}
+
+class $AssetsFlagsGen {
+  const $AssetsFlagsGen();
+
+  final AssetGenImage sa = const AssetGenImage('assets/flags/sa.png');
+  final AssetGenImage us = const AssetGenImage('assets/flags/us.png');
 }
 
 class AssetGenImage {

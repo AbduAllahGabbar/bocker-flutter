@@ -234,7 +234,24 @@
   "Your new password must be at least 6 characters": "Your new password must be at least 6 characters",
   "New Password": "New Password",
   "Reset Password": "Reset Password",
-  "Please enter a new password": "Please enter a new password"
+  "Please enter a new password": "Please enter a new password",
+  "PASSPORT": "PASSPORT",
+  "Tap to upload passport photo": "Tap to upload passport photo",
+  "Change Language": "Change Language",
+  "Delete Account": "Delete Account",
+  "PREMIUM ACCOUNT": "PREMIUM ACCOUNT",
+  "ACCOUNT MANAGEMENT": "ACCOUNT MANAGEMENT",
+  "Verification Status": "Verification Status",
+  "Identity & Address Verified": "Identity & Address Verified",
+  "My Agreements": "My Agreements",
+  "4 Active contracts signed": "4 Active contracts signed",
+  "Support Messages": "Support Messages",
+  "No unread messages": "No unread messages",
+  "View and manage support tickets": "View and manage support tickets",
+  "SECURITY & PREFERENCES": "SECURITY & PREFERENCES",
+  "Account Security": "Account Security",
+  "2FA Enabled, Last changed 12d ago": "2FA Enabled, Last changed 12d ago",
+  "English, Push Notifications": "English, Push Notifications"
 
 
 }

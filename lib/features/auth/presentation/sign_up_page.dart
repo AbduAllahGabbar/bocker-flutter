@@ -18,9 +18,7 @@ import '../../../core/utils/constants/app_constants.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'auth_widgets.dart';
-import 'google_button_widget.dart';
 import 'pages/otp_fields.dart';
-import 'pages/terms_conditions_webview.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});

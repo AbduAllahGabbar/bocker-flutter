@@ -245,5 +245,22 @@
   "Your new password must be at least 6 characters": "يجب أن تتكون كلمة المرور الجديدة من 6 أحرف على الأقل",
   "New Password": "كلمة المرور الجديدة",
   "Reset Password": "إعادة تعيين كلمة المرور",
-  "Please enter a new password": "يرجى إدخال كلمة مرور جديدة"
+  "Please enter a new password": "يرجى إدخال كلمة مرور جديدة",
+  "PASSPORT": "جواز السفر",
+  "Tap to upload passport photo": "اضغط لرفع صورة جواز السفر",
+  "Change Language": "تغيير اللغة",
+  "Delete Account": "حذف الحساب",
+  "PREMIUM ACCOUNT": "الحساب المميز",
+  "ACCOUNT MANAGEMENT": "إدارة الحساب",
+  "Verification Status": "حالة التحقق",
+  "Identity & Address Verified": "تم التحقق من الهوية والعنوان",
+  "My Agreements": "اتفاقياتي",
+  "4 Active contracts signed": "4 عقود نشطة موقعة",
+  "Support Messages": "رسائل الدعم",
+  "No unread messages": "لا توجد رسائل غير مقروءة",
+  "View and manage support tickets": "عرض وإدارة تذاكر الدعم",
+  "SECURITY & PREFERENCES": "الأمان والتفضيلات",
+  "Account Security": "أمان الحساب",
+  "2FA Enabled, Last changed 12d ago": "المصادقة الثنائية مفعلة، آخر تغيير منذ 12 يومًا",
+  "English, Push Notifications": "الإنجليزية، إشعارات الدفع"
 }

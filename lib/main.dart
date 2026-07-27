@@ -19,20 +19,10 @@ import 'core/helpers/restart_widget.dart';
 import 'features/app/app_cubit.dart';
 import 'features/app/app_state.dart';
 import 'features/auth/cubit/auth_cubit.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+
 
 Future<void> main(args) async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Register the WebView platform implementation before use.
-  // webview_flutter v4+ requires explicit platform registration.
-  if (Platform.isAndroid) {
-    WebViewPlatform.instance = AndroidWebViewPlatform();
-  } else if (Platform.isIOS || Platform.isMacOS) {
-    WebViewPlatform.instance = WebKitWebViewPlatform();
-  }
 
   Bloc.observer = MyBlocObserver();
   await AppCache.setIsViewedOnboarding(false);

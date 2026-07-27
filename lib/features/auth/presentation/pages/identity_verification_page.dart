@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:res_reline/my_responsive.dart';
 
 import '../../../../core/componants/async_dropdownmenu.dart';
@@ -74,6 +74,36 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
     }
   }
 
+  /// Shows a bottom-sheet letting the user choose between Camera and Gallery.
+  Future<void> _pickImage({
+    required Function(String path) onPicked,
+  }) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _ImageSourceSheet(),
+    );
+    if (source == null) return;
+
+    try {
+      final picker = ImagePicker();
+      final XFile? file = await picker.pickImage(
+        source: source,
+        imageQuality: 90,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+      if (file != null) {
+        setState(() => onPicked(file.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastState.error.snackBar(context, 'Failed to pick image'.tran);
+      }
+    }
+  }
+
   void _handleSubmit() {
     if (_hasExpirationDate == null) {
       ToastState.error.snackBar(
@@ -127,7 +157,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
       return;
     }
     if(_frontSidePath==null){
-      ToastState.error.snackBar(context, 'Please upload front side of document'.tran);
+      ToastState.error.snackBar(context, _documentType == 'Passport' ? 'Please upload passport document'.tran : 'Please upload front side of document'.tran);
       return;
     }
 
@@ -302,37 +332,37 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                   ),
                   SizedBox(height: 24.h),
 
-                  _buildSectionTitle('FRONT SIDE'),
+                  _buildSectionTitle(_documentType == 'Passport' ? 'PASSPORT' : 'FRONT SIDE'),
                   SizedBox(height: 12.h),
                   _buildUploadBox(
                     context: context,
-                    label: 'Tap to upload front photo',
-                    icon: Icons.upload_file,
+                    label: _documentType == 'Passport' ? 'Tap to upload passport photo' : 'Tap to upload front photo',
+                    icon: Icons.camera_alt_outlined,
                     filePath: _frontSidePath,
                     isImage: true,
-                    onTap: () => _pickFile(
-                      type: FileType.image,
+                    onTap: () => _pickImage(
                       onPicked: (path) => _frontSidePath = path,
                     ),
                     onRemove: () => setState(() => _frontSidePath = null),
                   ),
                   SizedBox(height: 24.h),
 
-                  _buildSectionTitle('BACK SIDE (IF ANY)', isRequired: false),
-                  SizedBox(height: 12.h),
-                  _buildUploadBox(
-                    context: context,
-                    label: 'Tap to upload back photo',
-                    icon: Icons.upload_file,
-                    filePath: _backSidePath,
-                    isImage: true,
-                    onTap: () => _pickFile(
-                      type: FileType.image,
-                      onPicked: (path) => _backSidePath = path,
+                  if (_documentType != 'Passport') ...[
+                    _buildSectionTitle('BACK SIDE (IF ANY)', isRequired: false),
+                    SizedBox(height: 12.h),
+                    _buildUploadBox(
+                      context: context,
+                      label: 'Tap to upload back photo',
+                      icon: Icons.camera_alt_outlined,
+                      filePath: _backSidePath,
+                      isImage: true,
+                      onTap: () => _pickImage(
+                        onPicked: (path) => _backSidePath = path,
+                      ),
+                      onRemove: () => setState(() => _backSidePath = null),
                     ),
-                    onRemove: () => setState(() => _backSidePath = null),
-                  ),
-                  SizedBox(height: 24.h),
+                    SizedBox(height: 24.h),
+                  ],
 
                   _buildSectionTitle('OTHER DOCUMENT', isRequired: false),
                   SizedBox(height: 12.h),
@@ -698,6 +728,143 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// Bottom-sheet for selecting image source (camera or gallery).
+class _ImageSourceSheet extends StatelessWidget {
+  const _ImageSourceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              'Choose Image Source',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            // Camera option
+            _SourceTile(
+              icon: Icons.camera_alt_outlined,
+              label: 'Take Photo',
+              subtitle: 'Use the camera',
+              color: const Color(0xFF6366F1),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            const SizedBox(height: 12),
+            // Gallery option
+            _SourceTile(
+              icon: Icons.photo_library_outlined,
+              label: 'Choose from Gallery',
+              subtitle: 'Pick an existing photo',
+              color: const Color(0xFF0EA5E9),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceTile extends StatelessWidget {
+  const _SourceTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withOpacity(0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }

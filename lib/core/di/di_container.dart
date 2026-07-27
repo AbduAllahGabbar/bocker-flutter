@@ -7,8 +7,6 @@ import '../../features/auth/data/data_source/auth_remote_data_source.dart';
 import '../config/local/token_cache_service.dart';
 import '../network/dio/dio_factory.dart';
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:isar_plus/isar_plus.dart';
 
 final di = GetIt.instance;
 

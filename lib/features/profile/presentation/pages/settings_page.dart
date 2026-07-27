@@ -96,6 +96,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 value: _smsAlerts,
                 onChanged: (val) => setState(() => _smsAlerts = val),
               ),
+              const Divider(color: Color(0xFFEEEFF3), height: 1, thickness: 1),
+              _buildActionRow(
+                title: 'Change Language'.tran,
+                onTap: () => context.pushNamed(RoutesNames.language),
+              ),
             ],
           ),
         ),
@@ -212,6 +217,35 @@ class _SettingsPageState extends State<SettingsPage> {
             onChanged: onChanged,
           ),
         ],
+    ));
+  }
+
+  Widget _buildActionRow({
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16.h,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF1E293B),
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16.r,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
       ),
     );
   }

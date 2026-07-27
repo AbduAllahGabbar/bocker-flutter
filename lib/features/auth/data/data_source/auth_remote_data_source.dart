@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:boker/core/data/constants/apis_constants.dart';
 import 'package:boker/core/config/local/token_cache_service.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/services/upload_files_services/upload_files_services.dart';
 import '../enums/user_role.dart';
 import '../models/user_model.dart';
 import '../models/register_response.dart';
@@ -11,7 +12,7 @@ sealed class EmailLoginResult {
   const EmailLoginResult();
 
   const factory EmailLoginResult.authenticated(UserModel user) =
-  AuthenticatedLoginResult;
+      AuthenticatedLoginResult;
 
   const factory EmailLoginResult.otpRequired({
     required String customerId,
@@ -27,12 +28,14 @@ sealed class EmailLoginResult {
 
 final class AuthenticatedLoginResult extends EmailLoginResult {
   final UserModel user;
+
   const AuthenticatedLoginResult(this.user);
 }
 
 final class OtpRequiredLoginResult extends EmailLoginResult {
   final String customerId;
   final String phone;
+
   const OtpRequiredLoginResult({required this.customerId, required this.phone});
 }
 
@@ -40,6 +43,7 @@ final class FormNotCompletedLoginResult extends EmailLoginResult {
   final String email;
   final String password;
   final String? accessToken;
+
   const FormNotCompletedLoginResult({
     required this.email,
     required this.password,
@@ -79,13 +83,9 @@ abstract class AuthRemoteDataSource {
     required String otp,
   });
 
-  Future<Either<Failure, String>> resendOtp({
-    required String customerId,
-  });
+  Future<Either<Failure, String>> resendOtp({required String customerId});
 
-  Future<Either<Failure, String>> requestPhoneLoginOtp({
-    required String phone,
-  });
+  Future<Either<Failure, String>> requestPhoneLoginOtp({required String phone});
 
   Future<Either<Failure, UserModel>> verifyPhoneLoginOtp({
     required String phone,
@@ -106,16 +106,15 @@ abstract class AuthRemoteDataSource {
 
   Future<Either<Failure, void>> deleteAccount();
 
-
   Future<Either<Failure, UserModel>> getCurrentUser({String? token});
 
-// Future<UserModel> completeRegistration({
-//   required String userId,
-//   required UserRole role,
-// });
-// Future<void> resetPassword({required String email});
-// Future<UserModel> signInWithGoogle({bool isSignIn = true});
-// Stream<Session?> listenToAuthChanges();
+  // Future<UserModel> completeRegistration({
+  //   required String userId,
+  //   required UserRole role,
+  // });
+  // Future<void> resetPassword({required String email});
+  // Future<UserModel> signInWithGoogle({bool isSignIn = true});
+  // Stream<Session?> listenToAuthChanges();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -126,7 +125,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required Dio dio,
     required TokenCacheService tokenCacheHelper,
   }) : _dio = dio,
-        _tokenCacheHelper = tokenCacheHelper;
+       _tokenCacheHelper = tokenCacheHelper;
 
   Future<String?> _saveAuthTokenFromResponse(dynamic responseData) async {
     if (responseData is! Map) {
@@ -144,8 +143,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   UserModel _parseUserModel(Map<String, dynamic> json) {
     final copy = Map<String, dynamic>.from(json);
     copy['id'] = (json['_id'] ?? json['id'] ?? '').toString();
-    if (copy['fullName'] == null && (json['firstName'] != null || json['lastName'] != null)) {
-      copy['fullName'] = '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim();
+    if (copy['fullName'] == null &&
+        (json['firstName'] != null || json['lastName'] != null)) {
+      copy['fullName'] = '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'
+          .trim();
     }
     if (copy['phone'] == null && json['mobile'] != null) {
       copy['phone'] = '${json['phonePrefix'] ?? ''}${json['mobile']}';
@@ -157,9 +158,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   String? _extractToken(Map data) {
-    final rawToken = data['token'];
-    if (rawToken is String && rawToken.isNotEmpty) {
-      return rawToken;
+    final rootToken = data['accessToken'] ?? data['token'];
+    if (rootToken is String && rootToken.isNotEmpty) {
+      return rootToken;
     }
 
     final session = data['session'];
@@ -181,24 +182,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/user/login',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: {
-          "email": emailOrPhone,
-          "password": password,
-        },
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        data: {"email": emailOrPhone, "password": password},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data as Map<String, dynamic>;
 
-        final accessToken = data['accessToken'] as String? ?? data['token'] as String?;
-        if (accessToken != null && accessToken.isNotEmpty) {
-          await _tokenCacheHelper.setToken(accessToken);
-        }
+        final accessToken = await _saveAuthTokenFromResponse(data);
 
         // Check if form is not completed
         if (data['isFormNotCompleted'] == true) {
@@ -251,11 +242,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/user/register',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
         data: data,
       );
 
@@ -282,15 +269,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/user/verifyEmailOtp',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: {
-          "email": email,
-          "otp": otp
-        },
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        data: {"email": email, "otp": otp},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -308,47 +288,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> uploadImage(String imagePath) async {
-    try {
-      final fileName = imagePath.split(RegExp(r'[/\\]')).last;
-      final formData = FormData.fromMap({
-        'fileToUpload': [
-          await MultipartFile.fromFile(imagePath, filename: fileName),
-        ],
-      });
-      final response = await _dio.post(
-        'https://boker.egytag.com/x-api/upload/image',
-        data: formData,
-      );
-      if (response.statusCode == 200 && response.data != null && response.data['done'] == true) {
-        return Right(Map<String, dynamic>.from(response.data['image']));
-      }
-      return const Left(ServerFailure(message: 'Failed to upload image'));
-    } catch (e,st) {
-      return ErrorHandler.handle(e,st).left();
-    }
+  Future<Either<Failure, Map<String, dynamic>>> uploadImage(
+    String imagePath,
+  ) async {
+    return UploadFilesServices.uploadImage(imagePath);
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> uploadFile(String filePath) async {
-    try {
-      final fileName = filePath.split(RegExp(r'[/\\]')).last;
-      final formData = FormData.fromMap({
-        'fileToUpload': [
-          await MultipartFile.fromFile(filePath, filename: fileName),
-        ],
-      });
-      final response = await _dio.post(
-        'https://boker.egytag.com/x-api/upload/file',
-        data: formData,
-      );
-      if (response.statusCode == 200 && response.data != null && response.data['done'] == true) {
-        return Right(Map<String, dynamic>.from(response.data['file']));
-      }
-      return const Left(ServerFailure(message: 'Failed to upload file'));
-    } catch (e,st) {
-      return ErrorHandler.handle(e,st).left();
-    }
+  Future<Either<Failure, Map<String, dynamic>>> uploadFile(
+    String filePath,
+  ) async {
+    return UploadFilesServices.uploadFile(filePath);
   }
 
   @override
@@ -361,11 +311,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/manageUsers/updateUserForm',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
         data: {
           "email": email,
           "password": password,
@@ -374,20 +320,22 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         },
       );
 
-      if (response.statusCode == 200 && response.data != null && response.data['done'] == true) {
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['done'] == true) {
         return const Right(true);
       }
-      return Left(ServerFailure(message: response.statusMessage ?? 'Failed to update user form'));
+      return Left(
+        ServerFailure(
+          message: response.statusMessage ?? 'Failed to update user form',
+        ),
+      );
     } on DioException catch (e) {
       return Left(ServerFailure(message: _handleDioError(e)));
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }
   }
-
-
-
-
 
   @override
   Future<Either<Failure, String>> requestPhoneLoginOtp({
@@ -402,13 +350,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
             'Accept': 'application/json',
           },
         ),
-        data: {
-          "phone": phone,
-        },
+        data: {"phone": phone},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final message = response.data['message'] as String? ?? 'OTP sent successfully';
+        final message =
+            response.data['message'] as String? ?? 'OTP sent successfully';
         return Right(message);
       } else {
         return Failure.server(
@@ -422,7 +369,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-
   @override
   Future<Either<Failure, void>> sendForgotPasswordOtp({
     required String email,
@@ -430,11 +376,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/otpMails/add',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
         data: {'email': email},
       );
 
@@ -460,16 +402,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/user/updatePasswordWithOtp',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: {
-          'email': email,
-          'otp': otp,
-          'password': password,
-        },
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        data: {'email': email, 'otp': otp, 'password': password},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -529,9 +463,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         return Failure.internal('Token not found').left();
       }
 
-      final response = await _dio.delete(
-        ApiConstants.account,
-      );
+      final response = await _dio.delete(ApiConstants.account);
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         await _tokenCacheHelper.clearToken();
@@ -594,15 +526,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   UserModel _mapUserFromDatabase(Map<String, dynamic> data) {
-
     final firstName = data['first_name'] as String?;
     final lastName = data['last_name'] as String?;
     final resolvedFullName =
-    (data['full_name'] ??
-        ((firstName != null || lastName != null)
-            ? '${firstName ?? ''} ${lastName ?? ''}'.trim()
-            : null))
-    as String?;
+        (data['full_name'] ??
+                ((firstName != null || lastName != null)
+                    ? '${firstName ?? ''} ${lastName ?? ''}'.trim()
+                    : null))
+            as String?;
 
     return UserModel(
       id: data['id']?.toString() ?? data['actor_id']?.toString() ?? '',
@@ -617,9 +548,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       hasAccount: data['has_account'] as bool?,
       addresses: data['addresses'] is List
           ? (data['addresses'] as List)
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList()
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
           : null,
       emailVerified: data['email_verified'] as bool? ?? false,
       status: data['status'] != null
@@ -650,16 +581,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Either<Failure, String>> verifyOtp({required String phone, required String customerId, required String otp}) {
+  Future<Either<Failure, String>> verifyOtp({
+    required String phone,
+    required String customerId,
+    required String otp,
+  }) {
     // TODO: implement verifyOtp
     throw UnimplementedError();
   }
 
   @override
-  Future<Either<Failure, UserModel>> verifyPhoneLoginOtp({required String phone, required String otp}) {
+  Future<Either<Failure, UserModel>> verifyPhoneLoginOtp({
+    required String phone,
+    required String otp,
+  }) {
     // TODO: implement verifyPhoneLoginOtp
     throw UnimplementedError();
   }
-
-
 }

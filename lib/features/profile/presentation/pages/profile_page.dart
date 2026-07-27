@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:res_reline/my_responsive.dart';
-import 'package:boker/features/app/app_cubit.dart';
-import 'package:boker/features/app/app_state.dart';
 import 'package:boker/features/auth/cubit/auth_cubit.dart';
 import 'package:boker/features/auth/cubit/auth_state.dart';
+import 'package:boker/features/auth/data/repository/user_access.dart';
 import '../../../../core/componants/toast.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/di/di_container.dart';
-import '../../../../core/helpers/restart_widget.dart';
 import '../cubit/account_cubit.dart';
 import '../cubit/account_state.dart';
 
@@ -34,92 +33,92 @@ class _AccountView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
-        final res = MyRes.of(context);
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24.h),
+            borderRadius: BorderRadius.circular(24.s),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: theme.scaffoldBackgroundColor,
           child: Padding(
-            padding: EdgeInsets.all(24.h),
+            padding: EdgeInsets.all(24.s),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: EdgeInsets.all(16.h),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFE4E6),
+                  padding: EdgeInsets.all(16.s),
+                  decoration: BoxDecoration(
+                    color: colorScheme.errorContainer,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.logout_rounded,
-                    color: const Color(0xFFE11D48),
-                    size: 32.h,
+                    color: colorScheme.error,
+                    size: 32.s,
                   ),
                 ),
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.s),
                 Text(
                   'Logout'.tran,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
-                        fontSize: 20.h,
-                        color: const Color(0xFF1E293B),
+                        fontSize: 20.s,
+                        color: colorScheme.onSurface,
                       ),
                 ),
-                SizedBox(height: 12.h),
+                SizedBox(height: 12.s),
                 Text(
                   'Are you sure you want to logout from your account?'.tran,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF94A3B8),
-                        fontSize: 14.h,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 14.s,
                       ),
                 ),
-                SizedBox(height: 24.h),
+                SizedBox(height: 24.s),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          padding: EdgeInsets.symmetric(vertical: 14.s),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(90.h),
+                            borderRadius: BorderRadius.circular(90.s),
                           ),
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
-                          foregroundColor: const Color(0xFF1E293B),
+                          side: BorderSide(color: colorScheme.outlineVariant),
+                          foregroundColor: colorScheme.onSurface,
                         ),
                         child: Text(
                           'Cancel'.tran,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 14.h,
+                            fontSize: 14.s,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 12.h),
+                    SizedBox(width: 12.s),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
                           Navigator.pop(context);
                           di<AuthCubit>().signOut();
-                          di<AuthCubit>().signOut();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE11D48),
-                          foregroundColor: Colors.white,
+                          backgroundColor: colorScheme.error,
+                          foregroundColor: colorScheme.onError,
                           elevation: 0,
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          padding: EdgeInsets.symmetric(vertical: 14.s),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(90.h),
+                            borderRadius: BorderRadius.circular(90.s),
                           ),
                         ),
                         child: Text(
                           'Logout'.tran,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 14.h,
+                            fontSize: 14.s,
                           ),
                         ),
                       ),
@@ -136,9 +135,6 @@ class _AccountView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final canPop = Navigator.of(context).canPop();
-    final res = MyRes.of(context);
     return MultiBlocListener(
       listeners: [
         BlocListener<AuthCubit, AuthState>(
@@ -163,183 +159,80 @@ class _AccountView extends StatelessWidget {
       ],
       child: BlocBuilder<AccountCubit, AccountState>(
         builder: (context, state) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF9FAFB),
-            body: RefreshIndicator(
-              onRefresh: () => context.read<AuthCubit>().getCurrentUser(),
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
+          return SafeArea(
+            child: Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              body: RefreshIndicator(
+                onRefresh: () => context.read<AuthCubit>().getCurrentUser(),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 8.s),
+                  children: [
+                      _buildProfileHeader(state, context),
+                      SizedBox(height: 24.s),
+
+                      _buildSectionTitle('ACCOUNT MANAGEMENT', context),
+                      SizedBox(height: 12.s),
+                      _ProfileMenuTile(
+                        title: 'Verification Status'.tran,
+                        subtitle: 'Identity & Address Verified'.tran,
+                        icon: Icons.verified_user_outlined,
+                        onTap: () => context.pushNamed(RoutesNames.verificationStatus),
+                      ),
+                      _ProfileMenuTile(
+                        title: 'My Agreements'.tran,
+                        subtitle: '4 Active contracts signed'.tran,
+                        icon: Icons.description_outlined,
+                        onTap: () => context.pushNamed(RoutesNames.agreements),
+                      ),
+                      _ProfileMenuTile(
+                        title: 'Support Messages'.tran,
+                        subtitle: 'No unread messages'.tran,
+                        icon: Icons.chat_bubble_outline,
+                        onTap: () => context.pushNamed(RoutesNames.supportChat),
+                      ),
+                      _ProfileMenuTile(
+                        title: 'Help Center'.tran,
+                        subtitle: 'View and manage support tickets'.tran,
+                        icon: Icons.help_outline,
+                        onTap: () => context.pushNamed(RoutesNames.helpCenter),
+                      ),
+                      SizedBox(height: 24.s),
+
+                      _buildSectionTitle('SECURITY & PREFERENCES', context),
+                      SizedBox(height: 12.s),
+                      _ProfileMenuTile(
+                        title: 'Account Security'.tran,
+                        subtitle: '2FA Enabled, Last changed 12d ago'.tran,
+                        icon: Icons.security,
+                        onTap: () {},
+                      ),
+                      _ProfileMenuTile(
+                        title: 'App Settings'.tran,
+                        subtitle: 'English, Push Notifications'.tran,
+                        icon: Icons.settings_outlined,
+                        onTap: () => context.pushNamed(RoutesNames.settings),
+                      ),
+
+                      SizedBox(height: 24.s),
+
+                      _buildLogoutButton(context, state),
+                      SizedBox(height: 24.s),
+
+                      Center(
+                        child: Text(
+                          'Version 2.4.1 (Stable Build)',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 12.s,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: MediaQuery.paddingOf(context).bottom + 16.s),
+                    ],
                 ),
-                slivers: [
-                  // ── Collapsible SliverAppBar with profile header ─────────
-                  SliverAppBar(
-                    pinned: false,
-                    floating: true,
-                    snap: true,
-                    automaticallyImplyLeading: false,
-                    backgroundColor: Colors.white,
-                    surfaceTintColor: Colors.white,
-                    elevation: 0,
-                    centerTitle: true,
-                    toolbarHeight: 60.h,
-                    leading: canPop
-                        ? IconButton(
-                            onPressed: context.pop,
-                            icon: Icon(
-                              Icons.arrow_back_rounded,
-                              color: Colors.black87,
-                              size: 24.r,
-                            ),
-                          )
-                        : null,
-                    title: Text(
-                      'My Account'.tran,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: const Color(0xFF1D3A99),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20.h,
-                      ),
-                    ),
-                    bottom:PreferredSize(
-                      preferredSize: Size.fromHeight(120.h),
-                      child: Container(
-                        color: Colors.white,
-                        alignment: Alignment.bottomCenter,
-                        padding: EdgeInsets.only(bottom: 16.h),
-                        child: _AccountHeaderCard(state: state),
-                      ),
-                    ),
-                  ),
-
-                  // ── Menu cards ───────────────────────────────────────────
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 20.h,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        _ProfileMenuCard(
-                          title: 'Saved Addresses'.tran,
-                          icon: Icons.location_on_outlined,
-                          trailingText: state.isGuest
-                              ? null
-                              : '${state.user?.addresses?.length ?? 0} addresses',
-                          onTap: () {
-                            if (state.isGuest) {
-                              context.goNamed(RoutesNames.signIn);
-                            } else {
-                            //  context.pushNamed(RoutesNames.accountAddresses);
-                            }
-                          },
-                        ),
-                        // _ProfileMenuCard(
-                        //   title: 'Orders'.tran,
-                        //   icon: Icons.checklist,
-                        //   onTap: () {
-                        //     if (state.isGuest) {
-                        //       context.goNamed(RoutesNames.signIn);
-                        //     } else {
-                        //       context.pushNamed(RoutesNames.accountOrders);
-                        //     }
-                        //   },
-                        // ),
-                        // _ProfileMenuCard(
-                        //   title: 'Payment Methods'.tran,
-                        //   icon: Icons.credit_card_outlined,
-                        //   trailingText: state.isGuest ? null : '3 cards',
-                        //   onTap: () {
-                        //     if (state.isGuest) {
-                        //       context.goNamed(RoutesNames.signIn);
-                        //     } else {
-                        //       context.pushNamed(
-                        //         RoutesNames.accountPaymentMethods,
-                        //       );
-                        //     }
-                        //   },
-                        // ),
-                        BlocBuilder<AppCubit, AppState>(
-                          builder: (context, appState) {
-                            return _ProfileMenuCard(
-                              title: 'Language'.tran,
-                              icon: Icons.language,
-                              trailingText: LanguageType.fromValue(
-                                appState.languageCode,
-                              ).title,
-                              onTap: () async {
-                                final result = await context.pushNamed(
-                                  RoutesNames.language,
-                                );
-                                if (result==true) {
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    RestartWidget.restartApp(context);
-                                  });
-                                }
-                              },
-                            );
-                          },
-                        ),
-                        _ProfileMenuCard(
-                          title: 'App Settings'.tran,
-                          icon: Icons.settings_outlined,
-                          onTap: () => context.pushNamed(RoutesNames.settings),
-                        ),
-                        _ProfileMenuCard(
-                          title: 'Contact Us'.tran,
-                          icon: Icons.support_agent_outlined,
-                          onTap: (){},                        ),
-                        _ProfileMenuCard(
-                          title: 'FAQ'.tran,
-                          icon: Icons.help_outline,
-                          onTap: (){},                        ),
-                        _ProfileMenuCard(
-                          title: 'Terms & Conditions'.tran,
-                          icon: Icons.description_outlined,
-                          onTap: (){},                        ),
-                        _ProfileMenuCard(
-                          title: 'Privacy Policy'.tran,
-                          icon: Icons.privacy_tip_outlined,
-                          onTap: (){},                        ),
-                        _ProfileMenuCard(
-                          title: 'Returns & Exchange'.tran,
-                          icon: Icons.change_circle_outlined,
-                          onTap: (){},
-                        ),
-                        _ProfileMenuCard(
-                          title: 'About Us'.tran,
-                          icon: Icons.storefront_outlined,
-                          onTap: (){},                        ),
-                        _ProfileMenuCard(
-                          title: 'About App'.tran,
-                          icon: Icons.info_outline,
-                          trailingText: 'v2.4.0',
-                          onTap: () =>
-                              context.pushNamed(RoutesNames.accountAbout),
-                        ),
-                        _ProfileMenuCard(
-                          title: state.isGuest ? 'Login'.tran : 'Logout'.tran,
-                          icon: state.isGuest
-                              ? Icons.login_rounded
-                              : Icons.logout_rounded,
-                          isLogout: !state.isGuest,
-                          onTap: state.isGuest
-                              ? () => context.goNamed(RoutesNames.signIn)
-                              : () => _showLogoutDialog(context),
-                        ),
-                      ]),
-                    ),
-                  ),
-
-                  // ── Bottom spacing ───────────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: MediaQuery.paddingOf(context).bottom + 16.h,
-                    ),
-                  ),
-                ],
               ),
             ),
           );
@@ -347,151 +240,242 @@ class _AccountView extends StatelessWidget {
       ),
     );
   }
-}
 
-class _AccountHeaderCard extends StatelessWidget {
-  final AccountState state;
-
-  const _AccountHeaderCard({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildProfileHeader(AccountState state, BuildContext context) {
     final theme = Theme.of(context);
-    final user = state.user;
-    final hasAvatar = user?.avatarUrl?.trim().isNotEmpty ?? false;
-
+    final colorScheme = theme.colorScheme;
+    
+    final user = UserAccess.user;
+    final displayName = user?.displayFullName ?? 'Guest User'.tran;
+    final avatarUrl = user?.avatarUrl ?? user?.image;
+    final userId = user?.userId ?? 'N/A';
+    
     return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        SizedBox(height: 16.h),
-        Text(
-          state.displayName,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1D3A99),
-            fontSize: 20.h,
-          ),
-        ),
-        SizedBox(height: 6.h),
-        Text(
-          state.isGuest
-              ? 'Sign in to access your account'.tran
-              : (state.user?.phone ?? state.user?.email ?? ''),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: Colors.grey.shade400,
-            fontWeight: FontWeight.w500,
-            fontSize: 14.h,
-          ),
-        ),
-        SizedBox(height: 16.h),
-        ElevatedButton(
-          onPressed: state.isGuest
-              ? () => context.goNamed(RoutesNames.signIn)
-              : () {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile editing is not available yet.'),
-                      ),
-                    );
-                },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1D3A99),
-            foregroundColor: Colors.white,
-            minimumSize: Size(150, 41),
-            shape: const StadiumBorder(),
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            elevation: 0,
-          ),
-          child: Text(
-            state.isGuest ? 'Login'.tran : 'Edit Profile'.tran,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 14.h,
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              padding: EdgeInsets.all(4.s),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.primaryColor, width: 2.s),
+              ),
+              child: CircleAvatar(
+                radius: 40.s,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: (avatarUrl == null || avatarUrl.isEmpty)
+                    ? Icon(Icons.person, size: 40.s, color: colorScheme.onSurfaceVariant)
+                    : null,
+              ),
             ),
+            Container(
+              padding: EdgeInsets.all(4.s),
+              decoration: BoxDecoration(
+                color: theme.primaryColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: colorScheme.surface, width: 2.s),
+              ),
+              child: Icon(Icons.verified, color: colorScheme.onPrimary, size: 14.s),
+            ),
+          ],
+        ),
+        SizedBox(height: 16.s),
+        Text(
+          displayName,
+          style: TextStyle(
+            fontSize: 24.s,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        SizedBox(height: 4.s),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Account ID: $userId'.tran,
+              style: TextStyle(
+                fontSize: 13.s,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            SizedBox(width: 4.s),
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: userId));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Account ID copied'.tran)),
+                );
+              },
+              child: Icon(Icons.copy, size: 14.s, color: colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.s),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 6.s),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(20.s),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.workspace_premium_outlined, size: 14.s, color: theme.primaryColor),
+              SizedBox(width: 4.s),
+              Text(
+                'PREMIUM ACCOUNT'.tran,
+                style: TextStyle(
+                  fontSize: 11.s,
+                  fontWeight: FontWeight.bold,
+                  color: theme.primaryColor,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
+
+
+  Widget _buildSectionTitle(String title, BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(left: 4.s),
+      child: Text(
+        title.tran,
+        style: TextStyle(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontSize: 12.s,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context, AccountState state) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return InkWell(
+      onTap: state.isGuest
+          ? () => context.goNamed(RoutesNames.signIn)
+          : () => _showLogoutDialog(context),
+      borderRadius: BorderRadius.circular(16.s),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.s),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(16.s),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              state.isGuest ? Icons.login_rounded : Icons.logout_rounded,
+              color: colorScheme.error,
+              size: 20.s,
+            ),
+            SizedBox(width: 8.s),
+            Text(
+              state.isGuest ? 'Login'.tran : 'Logout'.tran,
+              style: TextStyle(
+                color: colorScheme.error,
+                fontWeight: FontWeight.w600,
+                fontSize: 16.s,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _ProfileMenuCard extends StatelessWidget {
+class _ProfileMenuTile extends StatelessWidget {
   final String title;
+  final String subtitle;
   final IconData icon;
-  final String? trailingText;
   final VoidCallback onTap;
-  final bool isLogout;
 
-  const _ProfileMenuCard({
+  const _ProfileMenuTile({
     required this.title,
+    required this.subtitle,
     required this.icon,
-    this.trailingText,
     required this.onTap,
-    this.isLogout = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final colorScheme = theme.colorScheme;
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: 12.s),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.shade200, width: 1.r),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16.s),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(16.s),
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 16.s),
           child: Row(
             children: [
               Container(
-                width: 40.r,
-                height: 40.r,
+                padding: EdgeInsets.all(10.s),
                 decoration: BoxDecoration(
-                  color: isLogout
-                      ? const Color(0xFFFEE2E2)
-                      : Colors.grey.shade50,
+                  color: colorScheme.primaryContainer,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
-                  color: isLogout ? Colors.red : Colors.black87,
-                  size: 20.r,
+                  color: theme.primaryColor,
+                  size: 22.s,
                 ),
               ),
-              SizedBox(width: 12.w),
+              SizedBox(width: 16.s),
               Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isLogout ? Colors.red : const Color(0xFF1F2937),
-                    fontSize: 16.h,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                        fontSize: 16.s,
+                      ),
+                    ),
+                    SizedBox(height: 2.s),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 13.s,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (trailingText != null) ...[
-                Text(
-                  trailingText!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14.h,
-                  ),
-                ),
-                SizedBox(width: 8.w),
-              ],
               Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.grey.shade400,
-                size: 20.r,
+                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                size: 24.s,
               ),
             ],
           ),
