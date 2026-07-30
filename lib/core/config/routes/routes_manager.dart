@@ -1,9 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:boker/core/config/routes/router_checker.dart';
 import '../../../features/auth/data/repository/user_access.dart';
 import '../../../features/layout/presentation/pages/layout_view.dart';
 import '../../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../di/di_container.dart';
 import 'auth_routes/auth_router.dart';
 import '../../../features/home/presentation/pages/home_page.dart';
 import '../../../features/profile/presentation/pages/profile_page.dart';
@@ -54,12 +56,10 @@ class RoutesNames {
   //     : AppCache.isViewedOnboarding
   //     ? '/$signIn'
   //     : '/$onBoarding';
-  static String get initialRoute => UserAccess.isAuthenticated
-       ? '/$home'
-     : '/$signIn';
+  static String get initialRoute =>
+      UserAccess.isAuthenticated ? '/$home' : '/$signIn';
 
   static String get checkTransaction => 'check-transaction';
-
 }
 
 /// TransitionPage alias for compatibility
@@ -178,13 +178,10 @@ class RouterManger {
       return RouterManger.buildPageWithDefaultTransition(
         context: context,
         state: state,
-        child:  const HomePage(),
+        child: const HomePage(),
       );
     },
-
   );
-
-
 
   static final _profileRoute = GoRoute(
     path: "/${RoutesNames.profile}",
@@ -255,7 +252,8 @@ class RouterManger {
             context: context,
             state: state,
             child: BlocProvider(
-              create: (context) => EditFormCubit(VerificationRepository()),
+              create: (context) =>
+                  EditFormCubit(VerificationRepository(di<Dio>())),
               child: EditIdentityPage(initialForm: extra),
             ),
           );
@@ -271,7 +269,8 @@ class RouterManger {
             context: context,
             state: state,
             child: BlocProvider(
-              create: (context) => EditFormCubit(VerificationRepository()),
+              create: (context) =>
+                  EditFormCubit(VerificationRepository(di<Dio>())),
               child: EditAddressPage(initialForm: extra),
             ),
           );

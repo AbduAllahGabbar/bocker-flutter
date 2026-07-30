@@ -20,7 +20,6 @@ import 'features/app/app_cubit.dart';
 import 'features/app/app_state.dart';
 import 'features/auth/cubit/auth_cubit.dart';
 
-
 Future<void> main(args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -28,17 +27,17 @@ Future<void> main(args) async {
   await AppCache.setIsViewedOnboarding(false);
 
   await Future.wait([
-    DI().initAppModule(),
     EasyLocalization.ensureInitialized(),
     AppCache.getOnboardingStatus(),
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
-    ])
+    ]),
     // MySettings.getSettings(),
   ]);
   DI.initAuth();
   await di<AuthCubit>().getCurrentUser();
+  await DI().initAppModule();
 
   FlutterNativeSplash.remove();
 
@@ -46,7 +45,9 @@ Future<void> main(args) async {
     EasyLocalization(
       supportedLocales: LanguageType.values.map((e) => e.locale).toList(),
       path: ASSET_PATH_LOCALISATION,
-      startLocale: LanguageType.fromValue(di<AppCubit>().state.languageCode).locale,
+      startLocale: LanguageType.fromValue(
+        di<AppCubit>().state.languageCode,
+      ).locale,
       fallbackLocale: LanguageType.english.locale,
       child: MultiBlocProvider(
         providers: [

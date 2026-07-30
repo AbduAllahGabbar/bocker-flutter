@@ -7,18 +7,16 @@ import '../../../../core/errors/failure.dart';
 import '../../../../core/services/upload_files_services/upload_files_services.dart';
 
 class VerificationRepository {
+  final Dio dio;
+
+  VerificationRepository(this.dio);
+
   Future<VerificationDocumentModel> fetchVerificationStatus(dynamic userId) async {
     try {
-      final dio = di<Dio>();
-      final token = await di<TokenCacheService>().getToken();
-      
-      final headers = {
-        if (token != null) 'Cookie': 'access_token=$token; access_token=$token; access_token=$token',
-      };
+
       
       final response = await dio.post(
         '/manageUsers/view',
-        options: Options(headers: headers),
         data: {
           "id": userId,
         },
@@ -38,16 +36,10 @@ class VerificationRepository {
 
   Future<Map<String, dynamic>> updateOneUserForm(Map<String, dynamic> data) async {
     try {
-      final dio = di<Dio>();
-      final token = await di<TokenCacheService>().getToken();
 
-      final headers = {
-        if (token != null) 'Cookie': 'access_token=$token; access_token=$token; access_token=$token',
-      };
       
       final response = await dio.post(
         '/user/updateOneUserForm',
-        options: Options(headers: headers),
         data: data,
       );
 

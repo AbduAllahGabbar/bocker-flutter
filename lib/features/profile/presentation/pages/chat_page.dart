@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/config/language/language_manager.dart';
+import '../../../../core/di/di_container.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../data/models/message_model.dart';
 import '../cubit/chat/chat_cubit.dart';
@@ -17,7 +19,8 @@ class ChatPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ChatCubit(ChatRepository())..fetchMessages(),
+      create: (context) =>
+          ChatCubit(ChatRepository(dio: di<Dio>()))..fetchMessages(),
       child: const _ChatView(),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/config/language/language_manager.dart';
 
@@ -8,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import '../../../../core/di/di_container.dart';
 import '../../data/repositories/tickets_repository.dart';
 import '../cubit/ticket_details/ticket_details_cubit.dart';
 import '../cubit/ticket_details/ticket_details_state.dart';
@@ -20,7 +22,8 @@ class TicketDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => TicketDetailsCubit(TicketsRepository(), ticket),
+      create: (context) =>
+          TicketDetailsCubit(TicketsRepository(dio: di<Dio>()), ticket),
       child: const _TicketDetailsView(),
     );
   }
@@ -89,7 +92,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                 onTap: () async {
                   Navigator.pop(ctx);
                   final picker = ImagePicker();
-                  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                  final pickedFile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
                   if (pickedFile != null) {
                     setState(() {
                       _selectedFilePath = pickedFile.path;
@@ -120,14 +125,15 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
   }
 
   void _sendReply(BuildContext context) {
-    if (_replyController.text.trim().isEmpty && _selectedFilePath == null) return;
-    
+    if (_replyController.text.trim().isEmpty && _selectedFilePath == null)
+      return;
+
     context.read<TicketDetailsCubit>().replyToTicket(
       desc: _replyController.text.trim(),
       filePath: _selectedFilePath,
       isImage: _isImage,
     );
-    
+
     _replyController.clear();
     setState(() {
       _selectedFilePath = null;
@@ -143,7 +149,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon:  Icon(Icons.arrow_back,),
+          icon: Icon(Icons.arrow_back),
           onPressed: context.pop,
         ),
         title: BlocBuilder<TicketDetailsCubit, TicketDetailsState>(
@@ -175,7 +181,11 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_vert, color: Theme.of(context).primaryColor, size: 24.s),
+            icon: Icon(
+              Icons.more_vert,
+              color: Theme.of(context).primaryColor,
+              size: 24.s,
+            ),
             onPressed: () {},
           ),
         ],
@@ -184,7 +194,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
         listener: (context, state) {
           state.maybeWhen(
             error: (_, msg) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(msg)));
             },
             success: (_) {
               _scrollToBottom();
@@ -197,10 +209,11 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
           return Column(
             children: [
               _buildHeaderCard(ticket),
-              Expanded(
-                child: _buildChatList(ticket),
+              Expanded(child: _buildChatList(ticket)),
+              _buildInputArea(
+                context,
+                state.maybeWhen(loading: (_) => true, orElse: () => false),
               ),
-              _buildInputArea(context, state.maybeWhen(loading: (_) => true, orElse: () => false)),
             ],
           );
         },
@@ -237,11 +250,19 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.money, size: 12.s, color: Theme.of(context).primaryColor),
+                    Icon(
+                      Icons.money,
+                      size: 12.s,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     SizedBox(width: 4.s),
                     Text(
                       categoryName,
-                      style: TextStyle(fontSize: 12.s, fontWeight: FontWeight.w500, color: Theme.of(context).primaryColor),
+                      style: TextStyle(
+                        fontSize: 12.s,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                   ],
                 ),
@@ -250,15 +271,21 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.s, vertical: 4.s),
                 decoration: BoxDecoration(
-                  color: isOpen ? const Color(0xFFFFF3CD) : const Color(0xFFF3F4F6),
+                  color: isOpen
+                      ? const Color(0xFFFFF3CD)
+                      : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(12.s),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      isOpen ? Icons.radio_button_unchecked : Icons.check_circle_outline,
+                      isOpen
+                          ? Icons.radio_button_unchecked
+                          : Icons.check_circle_outline,
                       size: 12.s,
-                      color: isOpen ? Theme.of(context).colorScheme.secondary : Colors.grey.shade600,
+                      color: isOpen
+                          ? Theme.of(context).colorScheme.secondary
+                          : Colors.grey.shade600,
                     ),
                     SizedBox(width: 4.s),
                     Text(
@@ -266,7 +293,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                       style: TextStyle(
                         fontSize: 12.s,
                         fontWeight: FontWeight.w600,
-                        color: isOpen ? Theme.of(context).colorScheme.secondary : Colors.grey.shade600,
+                        color: isOpen
+                            ? Theme.of(context).colorScheme.secondary
+                            : Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -286,10 +315,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
           SizedBox(height: 8.s),
           Text(
             'Created on $formattedDate',
-            style: TextStyle(
-              fontSize: 13.s,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 13.s, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -306,13 +332,18 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
       padding: EdgeInsets.symmetric(horizontal: 16.s),
       children: [
         // System Greeting mock if there are no replies yet to match design
-        _buildAgentMessage("Hello! We've received your request. Our support team is currently reviewing it. We appreciate your patience as we investigate this further.", dateStr),
+        _buildAgentMessage(
+          "Hello! We've received your request. Our support team is currently reviewing it. We appreciate your patience as we investigate this further.",
+          dateStr,
+        ),
         // Original ticket description (from user)
-        if (desc.isNotEmpty)
-          _buildUserMessage(desc, null, dateStr),
+        if (desc.isNotEmpty) _buildUserMessage(desc, null, dateStr),
         // Actual replies
         ...replies.map((reply) {
-          final isUser = reply['user'] == null || reply['user']['id'] == ticket['user']?['id'] || reply['user']['name'] == 'Me';
+          final isUser =
+              reply['user'] == null ||
+              reply['user']['id'] == ticket['user']?['id'] ||
+              reply['user']['name'] == 'Me';
           final text = reply['desc']?.toString() ?? '';
           final date = reply['date']?.toString() ?? '';
           final file = reply['file'];
@@ -338,12 +369,20 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
               CircleAvatar(
                 radius: 12.s,
                 backgroundColor: const Color(0xFFFDE68A),
-                child: Icon(Icons.support_agent, size: 14.s, color: const Color(0xFFB45309)),
+                child: Icon(
+                  Icons.support_agent,
+                  size: 14.s,
+                  color: const Color(0xFFB45309),
+                ),
               ),
               SizedBox(width: 8.s),
               Text(
                 'BrokerPro Support'.tran,
-                style: TextStyle(fontSize: 12.s, fontWeight: FontWeight.w500, color: const Color(0xFF4B5563)),
+                style: TextStyle(
+                  fontSize: 12.s,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF4B5563),
+                ),
               ),
               Text(
                 '  •  2 hours ago', // Mock time like UI
@@ -356,11 +395,17 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             padding: EdgeInsets.all(16.s),
             decoration: BoxDecoration(
               color: const Color(0xFFE5E7EB),
-              borderRadius: BorderRadius.circular(16.s).copyWith(topLeft: const Radius.circular(4)),
+              borderRadius: BorderRadius.circular(
+                16.s,
+              ).copyWith(topLeft: const Radius.circular(4)),
             ),
             child: Text(
               text,
-              style: TextStyle(fontSize: 14.s, color: const Color(0xFF374151), height: 1.4),
+              style: TextStyle(
+                fontSize: 14.s,
+                color: const Color(0xFF374151),
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -395,7 +440,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             padding: EdgeInsets.all(16.s),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(16.s).copyWith(topRight: const Radius.circular(4)),
+              borderRadius: BorderRadius.circular(
+                16.s,
+              ).copyWith(topRight: const Radius.circular(4)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,12 +450,16 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                 if (text.isNotEmpty)
                   Text(
                     text,
-                    style: TextStyle(fontSize: 14.s, color: Colors.white, height: 1.4),
+                    style: TextStyle(
+                      fontSize: 14.s,
+                      color: Colors.white,
+                      height: 1.4,
+                    ),
                   ),
                 if (fileMap != null) ...[
                   if (text.isNotEmpty) SizedBox(height: 12.s),
                   _buildAttachmentBubble(fileMap),
-                ]
+                ],
               ],
             ),
           ),
@@ -426,7 +477,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
     final name = fileMap['name']?.toString() ?? 'Attachment';
     final url = fileMap['url']?.toString();
     final path = fileMap['path']?.toString();
-    
+
     return Container(
       width: 240.s,
       height: 140.s,
@@ -440,18 +491,33 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12.s),
-              child: url != null 
-                  ? Image.network('https://boker.egytag.com$url', fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image, color: Colors.white)) 
-                  : (path != null ? Image.file(File(path), fit: BoxFit.cover) : const Icon(Icons.insert_drive_file, color: Colors.white)),
+              child: url != null
+                  ? Image.network(
+                      'https://boker.egytag.com$url',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.broken_image, color: Colors.white),
+                    )
+                  : (path != null
+                        ? Image.file(File(path), fit: BoxFit.cover)
+                        : const Icon(
+                            Icons.insert_drive_file,
+                            color: Colors.white,
+                          )),
             ),
           ),
           Positioned(
-            bottom: 0, left: 0, right: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 8.s),
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor.withOpacity(0.9),
-                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12.s), bottomRight: Radius.circular(12.s)),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12.s),
+                  bottomRight: Radius.circular(12.s),
+                ),
               ),
               child: Row(
                 children: [
@@ -467,7 +533,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -475,7 +541,12 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
 
   Widget _buildInputArea(BuildContext context, bool isLoading) {
     return Container(
-      padding: EdgeInsets.only(left: 16.s, right: 16.s, top: 12.s, bottom: 24.s),
+      padding: EdgeInsets.only(
+        left: 16.s,
+        right: 16.s,
+        top: 12.s,
+        bottom: 24.s,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
@@ -488,7 +559,10 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             Padding(
               padding: EdgeInsets.only(bottom: 8.s),
               child: Chip(
-                label: Text(_selectedFilePath!.split(Platform.pathSeparator).last, style: TextStyle(fontSize: 12.s)),
+                label: Text(
+                  _selectedFilePath!.split(Platform.pathSeparator).last,
+                  style: TextStyle(fontSize: 12.s),
+                ),
                 deleteIcon: const Icon(Icons.close, size: 16),
                 onDeleted: () {
                   setState(() {
@@ -500,7 +574,11 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
           Row(
             children: [
               IconButton(
-                icon: Icon(Icons.attach_file, color: Theme.of(context).primaryColor, size: 24.s),
+                icon: Icon(
+                  Icons.attach_file,
+                  color: Theme.of(context).primaryColor,
+                  size: 24.s,
+                ),
                 onPressed: isLoading ? null : _pickAttachment,
               ),
               Expanded(
@@ -514,7 +592,10 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                     controller: _replyController,
                     decoration: InputDecoration(
                       hintText: 'Type your reply...'.tran,
-                      hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14.s),
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14.s,
+                      ),
                       border: InputBorder.none,
                     ),
                   ),
@@ -522,13 +603,20 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
               ),
               SizedBox(width: 8.s),
               Container(
-                decoration:  BoxDecoration(
+                decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: isLoading 
-                      ? SizedBox(width: 20.s, height: 20.s, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  icon: isLoading
+                      ? SizedBox(
+                          width: 20.s,
+                          height: 20.s,
+                          child: const CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : Icon(Icons.send, color: Colors.white, size: 20.s),
                   onPressed: isLoading ? null : () => _sendReply(context),
                 ),

@@ -1,4 +1,5 @@
 import 'package:boker/features/auth/data/repository/user_access.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/config/language/language_manager.dart';
 
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:res_reline/my_responsive.dart';
 import 'package:boker/core/config/routes/routes_manager.dart';
 import 'package:boker/features/profile/data/models/document_model.dart';
+import '../../../../core/di/di_container.dart';
 import '../../data/repositories/verification_repository.dart';
 import '../cubit/verification_status/verification_status_cubit.dart';
 import '../cubit/verification_status/verification_status_state.dart';
@@ -18,8 +20,10 @@ class VerificationStatusPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
-        final userId = UserAccess.user?.id ?? UserAccess.user?.sId;
-        return VerificationStatusCubit(VerificationRepository())..fetchVerificationStatus(userId);
+        final userId = UserAccess.user?.id;
+        return VerificationStatusCubit(VerificationRepository(
+         di<Dio>(),
+        ))..fetchVerificationStatus(userId);
       },
       child: const _VerificationStatusView(),
     );
@@ -60,7 +64,7 @@ class _VerificationStatusView extends StatelessWidget {
               success: (identityForm, addressForm) {
                 return RefreshIndicator(
                   onRefresh: () async {
-                    final userId = UserAccess.user?.id ?? UserAccess.user?.sId;
+                    final userId = UserAccess.user?.id;
                     context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
                   },
                   child: ListView(
@@ -260,7 +264,7 @@ class _VerificationStatusView extends StatelessWidget {
               onPressed: () async {
                 final result = await context.pushNamed(RoutesNames.editIdentity, extra: form.originalJson);
                 if (result == true && context.mounted) {
-                  final userId = UserAccess.user?.id ?? UserAccess.user?.sId;
+                  final userId = UserAccess.user?.id;
                   context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
                 }
               },
@@ -357,7 +361,7 @@ class _VerificationStatusView extends StatelessWidget {
               onPressed: () async {
                 final result = await context.pushNamed(RoutesNames.editAddress, extra: form.originalJson);
                 if (result == true && context.mounted) {
-                  final userId = UserAccess.user?.id ?? UserAccess.user?.sId;
+                  final userId = UserAccess.user?.id;
                   context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
                 }
               },

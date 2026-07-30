@@ -11,8 +11,7 @@ class UserAccess {
   static UserModel? get user =>
       di<AuthCubit>().state.mapOrNull(authenticated: (value) => value.user);
 
-  static String? get accessToken =>
-      di<AuthCubit>().state.mapOrNull(authenticated: (value) => value.token);
+  static String? get accessToken => di<AuthCubit>().state.mapOrNull(authenticated: (value) => value.token);
 
   static String? get refreshToken => di<AuthCubit>().state.mapOrNull(
     authenticated: (value) => value.refreshToken,

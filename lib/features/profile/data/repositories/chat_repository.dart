@@ -5,18 +5,14 @@ import 'package:boker/features/profile/data/models/message_model.dart';
 import 'dart:convert';
 
 class ChatRepository {
+  final Dio dio;
+  ChatRepository({required this.dio});
   Future<List<MessageModel>> fetchMessages() async {
     try {
-      final dio = di<Dio>();
-      final token = await di<TokenCacheService>().getToken();
-      
-      final headers = {
-        if (token != null) 'Cookie': 'access_token=$token; access_token=$token',
-      };
+
       
       final response = await dio.post(
         '/messages/view-user',
-        options: Options(headers: headers),
         data: {},
       );
 
@@ -35,16 +31,9 @@ class ChatRepository {
 
   Future<MessageModel> addMessage(Map<String, dynamic> messageData) async {
     try {
-      final dio = di<Dio>();
-      final token = await di<TokenCacheService>().getToken();
-      
-      final headers = {
-        if (token != null) 'Cookie': 'access_token=$token; access_token=$token',
-      };
-      
+
       final response = await dio.post(
         '/messages/add-user',
-        options: Options(headers: headers),
         data: messageData,
       );
 

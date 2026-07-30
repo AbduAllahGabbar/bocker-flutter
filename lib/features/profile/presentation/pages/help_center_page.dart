@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:res_reline/my_responsive.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/config/routes/routes_manager.dart';
+import '../../../../core/di/di_container.dart';
 import '../../data/repositories/tickets_repository.dart';
 import '../cubit/tickets/tickets_cubit.dart';
 import '../cubit/tickets/tickets_state.dart';
@@ -15,7 +17,9 @@ class HelpCenterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => TicketsCubit(TicketsRepository())..fetchTickets(true),
+      create: (context) => TicketsCubit(TicketsRepository(
+        dio: di<Dio>(),
+      ))..fetchTickets(true),
       child: const _HelpCenterView(),
     );
   }
@@ -191,6 +195,7 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
     final repliesCount = isReplied ? 1 : 0; // Using a dummy count based on isReplied as per plan
 
     final isOpen = status == 'open';
+    final ticketId = item['id'] as int?;
 
     return GestureDetector(
       onTap: () {
@@ -313,7 +318,15 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
                   color: Colors.grey.shade600,
                 ),
               ),
-              Icon(Icons.chevron_right, size: 20.s, color: Colors.grey.shade400),
+              if (isOpen && ticketId != null)
+                _CloseTicketButton(
+                  ticketId: ticketId,
+                  onClosed: () {
+                    context.read<TicketsCubit>().fetchTickets(_isOpenTab);
+                  },
+                )
+              else
+                Icon(Icons.chevron_right, size: 20.s, color: Colors.grey.shade400),
             ],
           ),
         ],
@@ -322,3 +335,124 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
   }
 }
 
+class _CloseTicketButton extends StatefulWidget {
+  final int ticketId;
+  final VoidCallback onClosed;
+
+  const _CloseTicketButton({required this.ticketId, required this.onClosed});
+
+  @override
+  State<_CloseTicketButton> createState() => _CloseTicketButtonState();
+}
+
+class _CloseTicketButtonState extends State<_CloseTicketButton> {
+  bool _isLoading = false;
+
+  Future<void> _handleClose() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) =>
+          AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+                'Close Ticket', style: TextStyle(fontWeight: FontWeight.w600)),
+            content: const Text(
+                'Are you sure you want to close this ticket? This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(
+                    'Cancel', style: TextStyle(color: Colors.grey.shade600)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade400,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+                child: const Text('Close Ticket'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+
+    final success = await context.read<TicketsCubit>().closeTicket(
+        widget.ticketId);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Ticket closed successfully'),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      widget.onClosed();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to close ticket. Please try again.'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Colors.red.shade400,
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: _handleClose,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.close_rounded, size: 13, color: Colors.red.shade500),
+            const SizedBox(width: 4),
+            Text(
+              'Close Ticket',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.red.shade500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+}

@@ -57,4 +57,13 @@ class TicketsCubit extends Cubit<TicketsState> {
       emit(TicketsState.createError("Failed to create ticket: ${e.toString()}"));
     }
   }
+
+  Future<bool> closeTicket(int id) async {
+    try {
+      final result = await _repository.closeTicket(id);
+      return result;
+    } catch (e) {
+      return false;
+    }
+  }
 }

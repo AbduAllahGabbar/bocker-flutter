@@ -12,17 +12,10 @@ final di = GetIt.instance;
 
 class DI {
   Future<void> initAppModule() async {
-    if (!di.isRegistered<TokenCacheService>()) {
-      di.registerLazySingleton<TokenCacheService>(
-        () => const TokenCacheService(),
-      );
-    }
-
     if (!di.isRegistered<Dio>()) {
-      final dio = await DioFactory.getDio();
+      final dio = await DioFactory().getDioWithToken();
       di.registerLazySingleton<Dio>(() => dio);
     }
-
 
     if (!di.isRegistered<AppCubit>()) {
       final currentLang = await AppCache.getLanguage();
@@ -36,10 +29,7 @@ class DI {
   static AuthRepository initAuthRepository() {
     if (!di.isRegistered<AuthRemoteDataSource>()) {
       di.registerFactory<AuthRemoteDataSource>(
-        () => AuthRemoteDataSourceImpl(
-          dio: di<Dio>(),
-          tokenCacheHelper: di<TokenCacheService>(),
-        ),
+        () => AuthRemoteDataSourceImpl(dio: DioFactory().getDio()),
       );
     }
     if (!di.isRegistered<AuthRepository>()) {
@@ -57,6 +47,4 @@ class DI {
       );
     }
   }
-
-
 }

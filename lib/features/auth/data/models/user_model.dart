@@ -10,6 +10,7 @@ sealed class UserModel with _$UserModel {
 
   const factory UserModel({
     @JsonKey(name: '_id') String? sId,
+    required int id,
     bool? active,
     required String email,
     String? password,
@@ -35,7 +36,7 @@ sealed class UserModel with _$UserModel {
     String? registerDate,
     Map<String, dynamic>? profile,
     List<dynamic>? roles,
-    dynamic id,
+
     Map<String, dynamic>? identityForm,
     Map<String, dynamic>? addressForm,
 

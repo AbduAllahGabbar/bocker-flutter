@@ -102,7 +102,7 @@ abstract class AuthRemoteDataSource {
     required String password,
   });
 
-  Future<void> signOut();
+  Future<void> signOut({String? accessToken});
 
   Future<Either<Failure, void>> deleteAccount();
 
@@ -119,13 +119,8 @@ abstract class AuthRemoteDataSource {
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final Dio _dio;
-  final TokenCacheService _tokenCacheHelper;
 
-  AuthRemoteDataSourceImpl({
-    required Dio dio,
-    required TokenCacheService tokenCacheHelper,
-  }) : _dio = dio,
-       _tokenCacheHelper = tokenCacheHelper;
+  AuthRemoteDataSourceImpl({required Dio dio}) : _dio = dio;
 
   Future<String?> _saveAuthTokenFromResponse(dynamic responseData) async {
     if (responseData is! Map) {
@@ -136,26 +131,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (token == null || token.isEmpty) {
       return null;
     }
-    await _tokenCacheHelper.setToken(token);
+    CacheSecureStorage.saveTokens(accessToken: token);
     return token;
   }
 
-  UserModel _parseUserModel(Map<String, dynamic> json) {
-    final copy = Map<String, dynamic>.from(json);
-    copy['id'] = (json['_id'] ?? json['id'] ?? '').toString();
-    if (copy['fullName'] == null &&
-        (json['firstName'] != null || json['lastName'] != null)) {
-      copy['fullName'] = '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'
-          .trim();
-    }
-    if (copy['phone'] == null && json['mobile'] != null) {
-      copy['phone'] = '${json['phonePrefix'] ?? ''}${json['mobile']}';
-    }
-    if (copy['emailVerified'] == null && json['isVerifyEmail'] != null) {
-      copy['emailVerified'] = json['isVerifyEmail'];
-    }
-    return UserModel.fromJson(copy);
-  }
+
 
   String? _extractToken(Map data) {
     final rootToken = data['accessToken'] ?? data['token'];
@@ -179,6 +159,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String emailOrPhone,
     required String password,
   }) async {
+    return _doSignIn(
+      emailOrPhone: emailOrPhone,
+      password: password,
+      isRetry: false,
+    );
+  }
+
+  Future<Either<Failure, EmailLoginResult>> _doSignIn({
+    required String emailOrPhone,
+    required String password,
+    required bool isRetry,
+  }) async {
     try {
       final response = await _dio.post(
         '${ApiConstants.apiBaseUrl}/user/login',
@@ -188,6 +180,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data as Map<String, dynamic>;
+
+        // If the server signals an active session conflict, logout and retry.
+        final errorField = data['error'];
+        if (!isRetry &&
+            errorField != null &&
+            errorField.toString().isNotEmpty) {
+          final conflictToken = data['accessToken'] as String?;
+          await signOut(accessToken: conflictToken);
+          return _doSignIn(
+            emailOrPhone: emailOrPhone,
+            password: password,
+            isRetry: true,
+          );
+        }
 
         final accessToken = await _saveAuthTokenFromResponse(data);
 
@@ -216,7 +222,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
         if (data['user'] != null) {
           final userJson = data['user'] as Map<String, dynamic>;
-          final user = _parseUserModel(userJson);
+          final user = UserModel.fromJson(userJson);
           return Right(EmailLoginResult.authenticated(user));
         }
 
@@ -234,6 +240,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return Failure.internal(e.toString()).left();
     }
   }
+
+
 
   @override
   Future<Either<Failure, RegisterResponse>> signUp({
@@ -316,7 +324,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           "email": email,
           "password": password,
           "identityForm": identityForm,
-          if (addressForm != null) "addressForm": addressForm,
+          "addressForm": ?addressForm,
         },
       );
 
@@ -426,31 +434,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Either<Failure, void>> signOut() async {
+  Future<Either<Failure, void>> signOut({String? accessToken}) async {
     try {
-      final token = await _tokenCacheHelper.getToken();
+      final token = accessToken ?? await CacheSecureStorage.getAccessToken();
 
       final response = await _dio.delete(
         ApiConstants.signOut,
         options: Options(
-          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+          headers: {'access_token': ?token},
         ),
       );
 
       if (response.statusCode == 200) {
-        await _tokenCacheHelper.clearToken();
+        await CacheSecureStorage.clearTokens();
       } else {
-        await _tokenCacheHelper.clearToken();
+        await CacheSecureStorage.clearTokens();
+
         return Failure.server(
           response.statusMessage ?? 'Failed to sign out',
         ).left();
       }
       return const Right(null);
     } on DioException catch (e) {
-      await _tokenCacheHelper.clearToken();
+      await CacheSecureStorage.clearTokens();
       return Failure.server(_handleDioError(e)).left();
     } catch (e) {
-      await _tokenCacheHelper.clearToken();
+      await CacheSecureStorage.clearTokens();
       return Failure.internal(e.toString()).left();
     }
   }
@@ -458,7 +467,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, void>> deleteAccount() async {
     try {
-      final token = await _tokenCacheHelper.getToken();
+      final token = await CacheSecureStorage.getAccessToken();
       if (token == null) {
         return Failure.internal('Token not found').left();
       }
@@ -466,7 +475,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await _dio.delete(ApiConstants.account);
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        await _tokenCacheHelper.clearToken();
+        await CacheSecureStorage.clearTokens();
         return const Right(null);
       } else {
         return Failure.server('Failed to delete account').left();
@@ -481,16 +490,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, UserModel>> getCurrentUser({String? token}) async {
     try {
-      final currentToken = token ?? await _tokenCacheHelper.getToken();
+      final currentToken = token ?? await CacheSecureStorage.getAccessToken();
       if (currentToken == null) {
         return Left(Failure.internal('Token not found'));
       }
-
-      if (_tokenCacheHelper.isTokenExpired(currentToken)) {
-        await _tokenCacheHelper.clearToken();
-        return Left(Failure.server('Token expired'));
-      }
-      print("===token ===$currentToken");
 
       final response = await _dio.get(
         ApiConstants.account,
@@ -498,8 +501,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final user = _mapUserFromDatabase(
-          response.data['customer'] ?? response.data,
+        final user = UserModel.fromJson(
+         response.data['user'],
         );
         return Right(user);
       } else {
@@ -525,48 +528,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return 'Connection failed. Please check your internet.';
   }
 
-  UserModel _mapUserFromDatabase(Map<String, dynamic> data) {
-    final firstName = data['first_name'] as String?;
-    final lastName = data['last_name'] as String?;
-    final resolvedFullName =
-        (data['full_name'] ??
-                ((firstName != null || lastName != null)
-                    ? '${firstName ?? ''} ${lastName ?? ''}'.trim()
-                    : null))
-            as String?;
-
-    return UserModel(
-      id: data['id']?.toString() ?? data['actor_id']?.toString() ?? '',
-      email: data['email'] as String? ?? '',
-      companyName: data['company_name'] as String?,
-      phone: data['phone'] as String?,
-      fullName: resolvedFullName,
-      avatarUrl: data['avatar_url'] as String?,
-      metadata: data['metadata'] is Map<String, dynamic>
-          ? data['metadata'] as Map<String, dynamic>
-          : null,
-      hasAccount: data['has_account'] as bool?,
-      addresses: data['addresses'] is List
-          ? (data['addresses'] as List)
-                .whereType<Map>()
-                .map((e) => Map<String, dynamic>.from(e))
-                .toList()
-          : null,
-      emailVerified: data['email_verified'] as bool? ?? false,
-      status: data['status'] != null
-          ? UserStatus.fromJson(data['status'] as String)
-          : UserStatus.active,
-      deletedAt: data['deleted_at'] != null
-          ? DateTime.tryParse(data['deleted_at'] as String)
-          : null,
-      createdAt: data['created_at'] != null
-          ? DateTime.tryParse(data['created_at'] as String)
-          : null,
-      updatedAt: data['updated_at'] != null
-          ? DateTime.tryParse(data['updated_at'] as String)
-          : null,
-    );
-  }
 
   @override
   Future<Either<Failure, String>> resendOtp({required String customerId}) {
