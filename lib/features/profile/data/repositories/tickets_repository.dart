@@ -33,6 +33,25 @@ class TicketsRepository {
     }
   }
 
+  Future<Map<String, dynamic>> viewTicket(int id) async {
+    try {
+      final response = await dio.post(
+        '/tickets/view',
+        data: {"id": id},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data is String ? json.decode(response.data) : response.data;
+        if (data['done'] == true && data['doc'] != null) {
+          return data['doc'] as Map<String, dynamic>;
+        }
+      }
+      throw Exception('Failed to view ticket details');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> addTicket(Map<String, dynamic> dataPayload) async {
     try {
       final response = await dio.post(

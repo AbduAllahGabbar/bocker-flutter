@@ -66,7 +66,7 @@ class CountryApiServices {
     }
     try {
       final response = await _dio.post(
-        'https://boker.egytag.com/api/countries/all',
+        '/countries/all',
         options: Options(
           headers: {
             'Content-Type': 'application/json',

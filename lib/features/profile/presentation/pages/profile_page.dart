@@ -7,12 +7,14 @@ import 'package:res_reline/my_responsive.dart';
 import 'package:boker/features/auth/cubit/auth_cubit.dart';
 import 'package:boker/features/auth/cubit/auth_state.dart';
 import 'package:boker/features/auth/data/repository/user_access.dart';
+import 'package:boker/features/auth/data/auth_repository.dart';
 import '../../../../core/componants/toast.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/di/di_container.dart';
 import '../cubit/account_cubit.dart';
 import '../cubit/account_state.dart';
+import '../cubit/profile_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -26,8 +28,26 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-class _AccountView extends StatelessWidget {
+class _AccountView extends StatefulWidget {
   const _AccountView();
+
+  @override
+  State<_AccountView> createState() => _AccountViewState();
+}
+
+class _AccountViewState extends State<_AccountView> {
+  bool _isLoadingIb = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = UserAccess.user;
+      if (user != null) {
+        context.read<ProfileCubit>().fetchUserView(user.userId);
+      }
+    });
+  }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -177,7 +197,9 @@ class _AccountView extends StatelessWidget {
                       SizedBox(height: 12.s),
                       _ProfileMenuTile(
                         title: 'Verification Status'.tran,
-                        subtitle: 'Identity & Address Verified'.tran,
+                        subtitle: (state.user?.isFormCompleted == true && state.user?.isVerifyEmail == true)
+                            ? 'Identity & Address Verified'.tran
+                            : 'Pending Verification'.tran,
                         icon: Icons.verified_user_outlined,
                         onTap: () => context.pushNamed(RoutesNames.verificationStatus),
                       ),
@@ -201,6 +223,7 @@ class _AccountView extends StatelessWidget {
                       ),
                       SizedBox(height: 24.s),
 
+
                       _buildSectionTitle('SECURITY & PREFERENCES', context),
                       SizedBox(height: 12.s),
                       _ProfileMenuTile(
@@ -215,8 +238,25 @@ class _AccountView extends StatelessWidget {
                         icon: Icons.settings_outlined,
                         onTap: () => context.pushNamed(RoutesNames.settings),
                       ),
+                      _ProfileMenuTile(
+                        title: 'Change Password'.tran,
+                        subtitle: 'Update your account password'.tran,
+                        icon: Icons.lock_outline,
+                        onTap: () => context.pushNamed(RoutesNames.changePassword),
+                      ),
 
                       SizedBox(height: 24.s),
+                    _buildSectionTitle('PERSONAL DETAILS', context),
+                    SizedBox(height: 12.s),
+                    _ProfileInfoTile(title: 'Email', value: state.user?.email ?? 'N/A'),
+                    _ProfileInfoTile(title: 'Phone', value: state.user?.displayPhone ?? 'N/A'),
+                    if (state.user?.idNumber != null)
+                      _ProfileInfoTile(title: 'ID Number', value: state.user!.idNumber!),
+                    if (state.user?.clientType != null)
+                      _ProfileInfoTile(title: 'Client Type', value: state.user!.clientType!),
+                    if (state.user?.birthDate != null)
+                      _ProfileInfoTile(title: 'Birth Date', value: state.user!.birthDate!),
+                    SizedBox(height: 24.s),
 
                       _buildLogoutButton(context, state),
                       SizedBox(height: 24.s),
@@ -315,6 +355,22 @@ class _AccountView extends StatelessWidget {
             ),
           ],
         ),
+        SizedBox(height: 8.s),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.account_balance_wallet, size: 16.s, color: theme.primaryColor),
+            SizedBox(width: 4.s),
+            Text(
+              'Balance: \$${state.user?.balance ?? '0.00'}',
+              style: TextStyle(
+                fontSize: 16.s,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
         SizedBox(height: 12.s),
         Container(
           padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 6.s),
@@ -339,7 +395,54 @@ class _AccountView extends StatelessWidget {
             ],
           ),
         ),
+        SizedBox(height: 16.s),
+        _buildBecomeIbButton(context, state.user?.isIb ?? false),
       ],
+    );
+  }
+
+  Widget _buildBecomeIbButton(BuildContext context, bool isIb) {
+    return ElevatedButton(
+      onPressed: isIb || _isLoadingIb
+          ? null
+          : () async {
+              setState(() => _isLoadingIb = true);
+              final result = await di<AuthRepository>().updateIsIb();
+              setState(() => _isLoadingIb = false);
+              result.fold(
+                (failure) {
+                  ToastState.error.snackBar(context, failure.message);
+                },
+                (success) {
+                  ToastState.success.snackBar(context, 'Successfully became an IB'.tran);
+                  final user = UserAccess.user;
+                  if (user != null) {
+                     context.read<ProfileCubit>().fetchUserView(user.userId);
+                  }
+                },
+              );
+            },
+      style: ElevatedButton.styleFrom(
+        disabledBackgroundColor: Colors.grey.shade300,
+        padding: EdgeInsets.symmetric(horizontal: 24.s, vertical: 12.s),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.s),
+        ),
+      ),
+      child: _isLoadingIb
+          ? SizedBox(
+              height: 20.s,
+              width: 20.s,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text(
+              isIb ? 'Already an IB'.tran : 'Become IB'.tran,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14.s,
+                color: isIb ? Colors.grey.shade600 : null,
+              ),
+            ),
     );
   }
 
@@ -480,6 +583,41 @@ class _ProfileMenuTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileInfoTile extends StatelessWidget {
+  final String title;
+  final String value;
+  
+  const _ProfileInfoTile({required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.s),
+      padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12.s),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title.tran, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14.s)),
+          Text(value, style: TextStyle(color: colorScheme.onSurface, fontSize: 14.s, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }

@@ -19,6 +19,8 @@ import 'core/helpers/restart_widget.dart';
 import 'features/app/app_cubit.dart';
 import 'features/app/app_state.dart';
 import 'features/auth/cubit/auth_cubit.dart';
+import 'features/profile/presentation/cubit/profile_cubit.dart';
+import 'features/accounts/presentation/cubit/accounts_cubit.dart';
 
 Future<void> main(args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +55,8 @@ Future<void> main(args) async {
         providers: [
           BlocProvider(create: (_) => di<AuthCubit>()),
           BlocProvider(create: (_) => di<AppCubit>()),
+          BlocProvider(create: (_) => di<ProfileCubit>()),
+          BlocProvider(create: (_) => di<AccountsCubit>()),
         ],
         child: Platform.isAndroid
             ? RestartWidget(

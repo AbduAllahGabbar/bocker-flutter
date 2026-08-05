@@ -108,6 +108,15 @@ abstract class AuthRemoteDataSource {
 
   Future<Either<Failure, UserModel>> getCurrentUser({String? token});
 
+
+  Future<Either<Failure, bool>> updatePasswordProfile({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  });
+
+  Future<Either<Failure, bool>> updateIsIb();
+
   // Future<UserModel> completeRegistration({
   //   required String userId,
   //   required UserRole role,
@@ -134,8 +143,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     CacheSecureStorage.saveTokens(accessToken: token);
     return token;
   }
-
-
 
   String? _extractToken(Map data) {
     final rootToken = data['accessToken'] ?? data['token'];
@@ -173,7 +180,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/user/login',
+        '/user/login',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {"email": emailOrPhone, "password": password},
       );
@@ -241,15 +248,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-
-
   @override
   Future<Either<Failure, RegisterResponse>> signUp({
     required Map<String, dynamic> data,
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/user/register',
+        '/user/register',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: data,
       );
@@ -276,7 +281,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/user/verifyEmailOtp',
+        '/user/verifyEmailOtp',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {"email": email, "otp": otp},
       );
@@ -318,7 +323,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/manageUsers/updateUserForm',
+        '/manageUsers/updateUserForm',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {
           "email": email,
@@ -351,7 +356,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/store/auth/phone/request-otp',
+        '/store/auth/phone/request-otp',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -383,7 +388,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/otpMails/add',
+        '/otpMails/add',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {'email': email},
       );
@@ -409,7 +414,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '${ApiConstants.apiBaseUrl}/user/updatePasswordWithOtp',
+        '/user/updatePasswordWithOtp',
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {'email': email, 'otp': otp, 'password': password},
       );
@@ -440,9 +445,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       final response = await _dio.delete(
         ApiConstants.signOut,
-        options: Options(
-          headers: {'access_token': ?token},
-        ),
+        options: Options(headers: {'access_token': ?token}),
       );
 
       if (response.statusCode == 200) {
@@ -494,20 +497,80 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (currentToken == null) {
         return Left(Failure.internal('Token not found'));
       }
-
-      final response = await _dio.get(
-        ApiConstants.account,
-        queryParameters: {'locale': ApiConstants.defaultLocale},
+      var response = await _dio.post(
+        '/user/view',
+        options: Options(
+          headers: {
+            'Cookie': 'access_token=$currentToken;access_token=$currentToken',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
-        final user = UserModel.fromJson(
-         response.data['user'],
-        );
+        final user = UserModel.fromJson(response.data['doc']);
         return Right(user);
       } else {
         return Failure.server('Failed to get current user').left();
       }
+    } catch (e) {
+      return Failure.internal(e.toString()).left();
+    }
+  }
+
+
+  @override
+  Future<Either<Failure, bool>> updatePasswordProfile({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/user/update-password-profile',
+        data: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return const Right(true);
+      } else {
+        return Failure.server(
+          response.statusMessage ?? 'Failed to update password',
+        ).left();
+      }
+    } on DioException catch (e) {
+      return Failure.server(_handleDioError(e)).left();
+    } catch (e) {
+      return Failure.internal(e.toString()).left();
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> updateIsIb() async {
+    try {
+      final token = await CacheSecureStorage.getAccessToken();
+      if (token == null) {
+        return Left(Failure.internal('Token not found'));
+      }
+
+      final response = await _dio.post(
+        '/user/update-isIb',
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        data: {},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return const Right(true);
+      } else {
+        return Failure.server(
+          response.statusMessage ?? 'Failed to become IB',
+        ).left();
+      }
+    } on DioException catch (e) {
+      return Failure.server(_handleDioError(e)).left();
     } catch (e) {
       return Failure.internal(e.toString()).left();
     }
@@ -527,7 +590,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
     return 'Connection failed. Please check your internet.';
   }
-
 
   @override
   Future<Either<Failure, String>> resendOtp({required String customerId}) {

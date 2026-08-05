@@ -63,11 +63,20 @@ class BottomNavBar extends StatelessWidget {
           ),
 
           _NavItem(
+            icon: Icons.account_balance_wallet_outlined,
+            activeIcon: Icons.account_balance_wallet,
+            label: 'Accounts'.tran,
+            isSelected: currentIndex == 1,
+            onTap: () => onTap(1),
+            activeColor: activeColor,
+          ),
+
+          _NavItem(
             icon: Icons.person_outline_rounded,
             activeIcon: Icons.person_rounded,
             label: 'My Account'.tran,
-            isSelected: currentIndex == 1,
-            onTap: () => onTap(1),
+            isSelected: currentIndex == 2,
+            onTap: () => onTap(2),
             activeColor: activeColor,
           ),
         ],

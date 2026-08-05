@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/errors/failure.dart';
 import '../data/auth_repository.dart';
 import '../data/data_source/auth_remote_data_source.dart';
+import '../data/models/user_model.dart';
 import 'auth_state.dart' as auth_state;
 
 class AuthCubit extends Cubit<auth_state.AuthState> {
@@ -10,20 +11,8 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
 
   AuthCubit({required AuthRepository authRepository})
     : _authRepository = authRepository,
-      super(const auth_state.AuthState.initial()) {
-    _initializeAuth();
-  }
+      super(const auth_state.AuthState.initial());
 
-  Future<void> _initializeAuth() async {
-    emit(const auth_state.AuthState.loading());
-
-    // Check for existing session
-    final result = await _authRepository.getCurrentUser();
-    result.fold(
-      (l) => emit(auth_state.AuthState.error(l.message)),
-      (user) => emit(auth_state.AuthState.authenticated(user: user)),
-    );
-  }
 
   Future<void> signIn({
     required String emailOrPhone,
@@ -339,5 +328,9 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
         emit(s.copyWith(user: updatedUser));
       },
     );
+  }
+
+  void updateUser(UserModel user) {
+    emit(auth_state.AuthState.authenticated(user: user));
   }
 }

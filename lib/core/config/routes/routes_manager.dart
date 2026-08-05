@@ -23,6 +23,10 @@ import '../../../features/profile/data/repositories/verification_repository.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/profile/presentation/pages/edit_identity_page.dart';
 import '../../../features/profile/presentation/pages/edit_address_page.dart';
+import '../../../features/profile/presentation/pages/change_password_page.dart';
+import '../../../features/profile/presentation/cubit/account_cubit.dart';
+import '../../../features/accounts/presentation/pages/accounts_page.dart';
+import '../../../features/accounts/presentation/pages/create_account_page.dart';
 
 class RoutesNames {
   const RoutesNames._();
@@ -41,12 +45,15 @@ class RoutesNames {
   static const String helpCenter = "help-center";
   static const String createTicket = "create-ticket";
   static const String ticketDetails = "ticket-details";
+  static const String changePassword = "change-password";
 
   static const String home = "home";
   static const String checkout = "checkout";
   static const String payment = "payment";
   static const String onBoarding = "on-boarding";
   static const String profile = "profile";
+  static const String accounts = "accounts";
+  static const String createAccount = "create-account";
   static const String settings = 'settings';
   static const String accountAbout = 'account-about';
   static const String language = 'language';
@@ -167,6 +174,7 @@ class RouterManger {
         },
     branches: [
       StatefulShellBranch(routes: [_homeRoute]),
+      StatefulShellBranch(routes: [_accountsRoute]),
       StatefulShellBranch(routes: [_profileRoute]),
     ],
   );
@@ -181,6 +189,35 @@ class RouterManger {
         child: const HomePage(),
       );
     },
+  );
+
+  static final _accountsRoute = GoRoute(
+    path: "/${RoutesNames.accounts}",
+    name: RoutesNames.accounts,
+    pageBuilder: (context, state) {
+      return RouterManger.buildPageWithDefaultTransition(
+        context: context,
+        state: state,
+        child: BlocProvider(
+          create: (context) => DI.initAccounts(),
+          child: const AccountsPage(),
+        ),
+      );
+    },
+    routes: [
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.createAccount,
+        name: RoutesNames.createAccount,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const CreateAccountPage(),
+          );
+        },
+      ),
+    ],
   );
 
   static final _profileRoute = GoRoute(
@@ -215,6 +252,21 @@ class RouterManger {
             context: context,
             state: state,
             child: const LanguagePage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.changePassword,
+        name: RoutesNames.changePassword,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => AccountCubit(),
+              child: const ChangePasswordPage(),
+            ),
           );
         },
       ),

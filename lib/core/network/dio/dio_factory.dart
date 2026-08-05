@@ -17,7 +17,7 @@ class DioFactory {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          if (accessToken != null) 'Cookie': 'access_token=$accessToken',
+          if (accessToken != null) 'Cookie': 'access_token=$accessToken;access_token=$accessToken',
         },
       ),
     );
@@ -109,6 +109,7 @@ class DioFactory {
   Future<Dio> getDioWithToken() async {
     final accessToken =
         UserAccess.accessToken ?? await CacheSecureStorage.getAccessToken();
+
     return getDio(accessToken: accessToken);
   }
 }

@@ -59,6 +59,15 @@ abstract class AuthRepository {
   Future<Either<Failure, void>> deleteAccount();
 
   Future<Either<Failure, UserModel>> getCurrentUser();
+
+
+  Future<Either<Failure, bool>> updatePasswordProfile({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  });
+
+  Future<Either<Failure, bool>> updateIsIb();
 }
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -195,5 +204,24 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserModel>> getCurrentUser() async {
     return await _remoteDataSource.getCurrentUser();
+  }
+
+
+  @override
+  Future<Either<Failure, bool>> updatePasswordProfile({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    return await _remoteDataSource.updatePasswordProfile(
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
+  }
+
+  @override
+  Future<Either<Failure, bool>> updateIsIb() async {
+    return await _remoteDataSource.updateIsIb();
   }
 }
