@@ -14,6 +14,14 @@ import '../../features/accounts/presentation/cubit/create_account_cubit.dart';
 import '../config/local/token_cache_service.dart';
 import '../network/dio/dio_factory.dart';
 import 'package:dio/dio.dart';
+import '../../features/transactions/data/data_source/transactions_remote_data_source.dart';
+import '../../features/transactions/data/repositories/transactions_repository.dart';
+import '../../features/transactions/presentation/cubit/transactions_cubit.dart';
+import '../../features/transactions/presentation/cubit/add_transaction_cubit.dart';
+import '../../features/payment_methods/data/data_sources/payment_methods_remote_data_source.dart';
+import '../../features/payment_methods/data/repositories/payment_methods_repository.dart';
+import '../../features/payment_methods/presentation/cubit/payment_methods_cubit.dart';
+import '../../features/payment_methods/presentation/cubit/add_payment_method_cubit.dart';
 
 final di = GetIt.instance;
 
@@ -67,12 +75,13 @@ class DI {
     return di<ProfileRepository>();
   }
 
-  static void initProfile() {
+  static ProfileCubit initProfile() {
     if (!di.isRegistered<ProfileCubit>()) {
       di.registerSingleton<ProfileCubit>(
         ProfileCubit(profileRepository: initProfileRepository()),
       );
     }
+    return di<ProfileCubit>();
   }
 
   static AccountsRepository initAccountsRepository() {
@@ -104,5 +113,69 @@ class DI {
       );
     }
     return di<CreateAccountCubit>();
+  }
+
+  static TransactionsRepository initTransactionsRepository() {
+    if (!di.isRegistered<TransactionsRemoteDataSource>()) {
+      di.registerFactory<TransactionsRemoteDataSource>(
+        () => TransactionsRemoteDataSourceImpl(dio: di<Dio>()),
+      );
+    }
+    if (!di.isRegistered<TransactionsRepository>()) {
+      di.registerFactory<TransactionsRepository>(
+        () => TransactionsRepositoryImpl(remoteDataSource: di<TransactionsRemoteDataSource>()),
+      );
+    }
+    return di<TransactionsRepository>();
+  }
+
+  static TransactionsCubit initTransactions() {
+    if (!di.isRegistered<TransactionsCubit>()) {
+      di.registerFactory<TransactionsCubit>(
+       () =>  TransactionsCubit(repository: initTransactionsRepository()),
+      );
+    }
+    return di<TransactionsCubit>();
+  }
+
+  static AddTransactionCubit initAddTransaction() {
+    if (!di.isRegistered<AddTransactionCubit>()) {
+      di.registerFactory<AddTransactionCubit>(
+       () =>  AddTransactionCubit(repository: initTransactionsRepository()),
+      );
+    }
+    return di<AddTransactionCubit>();
+  }
+
+  static PaymentMethodsRepository initPaymentMethodsRepository() {
+    if (!di.isRegistered<PaymentMethodsRemoteDataSource>()) {
+      di.registerFactory<PaymentMethodsRemoteDataSource>(
+        () => PaymentMethodsRemoteDataSourceImpl(dio: di<Dio>()),
+      );
+    }
+    if (!di.isRegistered<PaymentMethodsRepository>()) {
+      di.registerFactory<PaymentMethodsRepository>(
+        () => PaymentMethodsRepositoryImpl(remoteDataSource: di<PaymentMethodsRemoteDataSource>()),
+      );
+    }
+    return di<PaymentMethodsRepository>();
+  }
+
+  static PaymentMethodsCubit initPaymentMethods() {
+    if (!di.isRegistered<PaymentMethodsCubit>()) {
+      di.registerFactory<PaymentMethodsCubit>(
+       () => PaymentMethodsCubit(repository: initPaymentMethodsRepository()),
+      );
+    }
+    return di<PaymentMethodsCubit>();
+  }
+
+  static AddPaymentMethodCubit initAddPaymentMethod() {
+    if (!di.isRegistered<AddPaymentMethodCubit>()) {
+      di.registerFactory<AddPaymentMethodCubit>(
+       () => AddPaymentMethodCubit(repository: initPaymentMethodsRepository()),
+      );
+    }
+    return di<AddPaymentMethodCubit>();
   }
 }

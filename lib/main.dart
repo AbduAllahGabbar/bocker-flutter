@@ -51,29 +51,18 @@ Future<void> main(args) async {
         di<AppCubit>().state.languageCode,
       ).locale,
       fallbackLocale: LanguageType.english.locale,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (_) => di<AuthCubit>()),
-          BlocProvider(create: (_) => di<AppCubit>()),
-          BlocProvider(create: (_) => di<ProfileCubit>()),
-          BlocProvider(create: (_) => di<AccountsCubit>()),
-        ],
-        child: Platform.isAndroid
-            ? RestartWidget(
+      child: Platform.isAndroid
+          ? RestartWidget(
+              child: ResInit(designSize: Size(375, 812), child: const MyApp()),
+            )
+          : DevicePreview(
+              builder: (context) => RestartWidget(
                 child: ResInit(
                   designSize: Size(375, 812),
                   child: const MyApp(),
                 ),
-              )
-            : DevicePreview(
-                builder: (context) => RestartWidget(
-                  child: ResInit(
-                    designSize: Size(375, 812),
-                    child: const MyApp(),
-                  ),
-                ),
               ),
-      ),
+            ),
     ),
   );
 }
@@ -90,22 +79,31 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     TextTheme textTheme = createTextTheme(context, "Nunito", "Nunito");
     MaterialTheme theme = MaterialTheme(textTheme);
-    return BlocBuilder<AppCubit, AppState>(
-      builder: (context, state) {
-        return MaterialApp.router(
-          builder: (context, child) => DevicePreview.appBuilder(context, child),
-          debugShowCheckedModeBanner: false,
-          routerConfig: RouterManger.router,
-          themeMode: state.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          theme: theme.light(),
-          darkTheme: theme.dark(),
-          localeResolutionCallback: (locale, supportedLocales) =>
-              context.locale,
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-        );
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => di<AuthCubit>()),
+        BlocProvider(create: (_) => di<AppCubit>()),
+        BlocProvider(create: (_) => DI.initProfile()),
+        BlocProvider(create: (_) => DI.initAccounts()),
+      ],
+      child: BlocBuilder<AppCubit, AppState>(
+        builder: (context, state) {
+          return MaterialApp.router(
+            builder: (context, child) =>
+                DevicePreview.appBuilder(context, child),
+            debugShowCheckedModeBanner: false,
+            routerConfig: RouterManger.router,
+            themeMode: state.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            theme: theme.light(),
+            darkTheme: theme.dark(),
+            localeResolutionCallback: (locale, supportedLocales) =>
+                context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+          );
+        },
+      ),
     );
   }
 }

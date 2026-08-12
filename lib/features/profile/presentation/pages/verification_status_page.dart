@@ -35,57 +35,55 @@ class _VerificationStatusView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            icon:  Icon(Icons.arrow_back),
-            onPressed: context.pop,
-          ),
-          title: Text(
-            'Verification Status'.tran,
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 22.s,
-            ),
-          ),
-          centerTitle: false,
+        elevation: 0,
+        leading: IconButton(
+          icon:  Icon(Icons.arrow_back),
+          onPressed: context.pop,
         ),
-        body: BlocBuilder<VerificationStatusCubit, VerificationStatusState>(
-          builder: (context, state) {
-            return state.when(
-              initial: () => const Center(child: CircularProgressIndicator()),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (message) => Center(child: Text(message, style: TextStyle(color: Colors.red))),
-              success: (identityForm, addressForm) {
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    final userId = UserAccess.user?.id;
-                    context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
-                  },
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                    padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
-                    children: [
-                      _buildOverallStatusBanner(context),
-                      SizedBox(height: 20.s),
-                      _buildIdentityCard(context, identityForm),
-                      SizedBox(height: 16.s),
-                      _buildAddressCard(context, addressForm),
-                      SizedBox(height: 24.s),
-                      _buildFooterInfo(context),
-                      SizedBox(height: MediaQuery.paddingOf(context).bottom + 16.s),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
+        title: Text(
+          'Verification Status'.tran,
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22.s,
+          ),
         ),
+        centerTitle: false,
+      ),
+      body: BlocBuilder<VerificationStatusCubit, VerificationStatusState>(
+        builder: (context, state) {
+          return state.when(
+            initial: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (message) => Center(child: Text(message, style: TextStyle(color: Colors.red))),
+            success: (identityForm, addressForm) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  final userId = UserAccess.user?.id;
+                  context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                  children: [
+                    _buildOverallStatusBanner(context),
+                    SizedBox(height: 20.s),
+                    _buildIdentityCard(context, identityForm),
+                    SizedBox(height: 16.s),
+                    _buildAddressCard(context, addressForm),
+                    SizedBox(height: 24.s),
+                    _buildFooterInfo(context),
+                    SizedBox(height: MediaQuery.paddingOf(context).bottom + 16.s),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

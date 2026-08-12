@@ -196,6 +196,12 @@ class _AccountViewState extends State<_AccountView> {
                       _buildSectionTitle('ACCOUNT MANAGEMENT', context),
                       SizedBox(height: 12.s),
                       _ProfileMenuTile(
+                        title: 'Payment Details'.tran,
+                        subtitle: 'Manage saved payment methods'.tran,
+                        icon: Icons.payment_outlined,
+                        onTap: () => context.pushNamed(RoutesNames.paymentDetails),
+                      ),
+                      _ProfileMenuTile(
                         title: 'Verification Status'.tran,
                         subtitle: (state.user?.isFormCompleted == true && state.user?.isVerifyEmail == true)
                             ? 'Identity & Address Verified'.tran
@@ -371,30 +377,30 @@ class _AccountViewState extends State<_AccountView> {
             ),
           ],
         ),
-        SizedBox(height: 12.s),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 6.s),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20.s),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.workspace_premium_outlined, size: 14.s, color: theme.primaryColor),
-              SizedBox(width: 4.s),
-              Text(
-                'PREMIUM ACCOUNT'.tran,
-                style: TextStyle(
-                  fontSize: 11.s,
-                  fontWeight: FontWeight.bold,
-                  color: theme.primaryColor,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // SizedBox(height: 12.s),
+        // Container(
+        //   padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 6.s),
+        //   decoration: BoxDecoration(
+        //     color: colorScheme.primaryContainer,
+        //     borderRadius: BorderRadius.circular(20.s),
+        //   ),
+        //   child: Row(
+        //     mainAxisSize: MainAxisSize.min,
+        //     children: [
+        //       Icon(Icons.workspace_premium_outlined, size: 14.s, color: theme.primaryColor),
+        //       SizedBox(width: 4.s),
+        //       Text(
+        //         'PREMIUM ACCOUNT'.tran,
+        //         style: TextStyle(
+        //           fontSize: 11.s,
+        //           fontWeight: FontWeight.bold,
+        //           color: theme.primaryColor,
+        //           letterSpacing: 0.5,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
         SizedBox(height: 16.s),
         _buildBecomeIbButton(context, state.user?.isIb ?? false),
       ],

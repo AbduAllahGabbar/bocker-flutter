@@ -8,6 +8,9 @@ import '../../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../di/di_container.dart';
 import 'auth_routes/auth_router.dart';
 import '../../../features/home/presentation/pages/home_page.dart';
+import '../../../features/transactions/presentation/cubit/transactions_cubit.dart';
+import '../../../features/transactions/presentation/cubit/add_transaction_cubit.dart';
+import '../../../features/transactions/presentation/pages/add_transaction_page.dart';
 import '../../../features/profile/presentation/pages/profile_page.dart';
 import '../../../features/profile/presentation/pages/settings_page.dart';
 import '../../../features/profile/presentation/pages/language_page.dart';
@@ -20,6 +23,13 @@ import '../../../features/profile/presentation/pages/create_ticket_page.dart';
 import '../../../features/profile/presentation/pages/ticket_details_page.dart';
 import '../../../features/profile/presentation/cubit/edit_form/edit_form_cubit.dart';
 import '../../../features/profile/data/repositories/verification_repository.dart';
+import '../../../features/payment_methods/presentation/pages/payment_methods_page.dart';
+import '../../../features/payment_methods/presentation/pages/select_payment_method_page.dart';
+import '../../../features/payment_methods/presentation/pages/add_crypto_payment_page.dart';
+import '../../../features/payment_methods/presentation/pages/add_card_payment_page.dart';
+import '../../../features/payment_methods/presentation/pages/add_bank_payment_page.dart';
+import '../../../features/payment_methods/presentation/pages/add_payment_success_page.dart';
+import '../../../features/transactions/data/models/payment_method_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/profile/presentation/pages/edit_identity_page.dart';
 import '../../../features/profile/presentation/pages/edit_address_page.dart';
@@ -46,6 +56,12 @@ class RoutesNames {
   static const String createTicket = "create-ticket";
   static const String ticketDetails = "ticket-details";
   static const String changePassword = "change-password";
+  static const String paymentDetails = "payment-details";
+  static const String selectPaymentMethod = "select-payment-method";
+  static const String addCryptoPayment = "add-crypto-payment";
+  static const String addCardPayment = "add-card-payment";
+  static const String addBankPayment = "add-bank-payment";
+  static const String addPaymentSuccess = "add-payment-success";
 
   static const String home = "home";
   static const String checkout = "checkout";
@@ -54,6 +70,7 @@ class RoutesNames {
   static const String profile = "profile";
   static const String accounts = "accounts";
   static const String createAccount = "create-account";
+  static const String addTransaction = "add-transaction";
   static const String settings = 'settings';
   static const String accountAbout = 'account-about';
   static const String language = 'language';
@@ -160,6 +177,21 @@ class RouterManger {
         },
       ),
       _layoutRoute,
+      GoRoute(
+        path: "/${RoutesNames.addTransaction}",
+        name: RoutesNames.addTransaction,
+        pageBuilder: (context, state) {
+          final type = state.extra as String? ?? 'deposit';
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => DI.initAddTransaction(),
+              child: AddTransactionPage(initialType: type),
+            ),
+          );
+        },
+      ),
       //  _walletRouter,
     ],
   );
@@ -186,7 +218,10 @@ class RouterManger {
       return RouterManger.buildPageWithDefaultTransition(
         context: context,
         state: state,
-        child: const HomePage(),
+        child: BlocProvider(
+          create: (context) => DI.initTransactions()..fetchTransactions(),
+          child: const HomePage(),
+        ),
       );
     },
   );
@@ -231,6 +266,81 @@ class RouterManger {
       );
     },
     routes: [
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.paymentDetails,
+        name: RoutesNames.paymentDetails,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const PaymentMethodsPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.selectPaymentMethod,
+        name: RoutesNames.selectPaymentMethod,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const SelectPaymentMethodPage(),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.addCryptoPayment,
+        name: RoutesNames.addCryptoPayment,
+        pageBuilder: (context, state) {
+          final method = state.extra as PaymentMethodModel;
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: AddCryptoPaymentPage(method: method),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.addCardPayment,
+        name: RoutesNames.addCardPayment,
+        pageBuilder: (context, state) {
+          final method = state.extra as PaymentMethodModel;
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: AddCardPaymentPage(method: method),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.addBankPayment,
+        name: RoutesNames.addBankPayment,
+        pageBuilder: (context, state) {
+          final method = state.extra as PaymentMethodModel;
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: AddBankPaymentPage(method: method),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutesNames.addPaymentSuccess,
+        name: RoutesNames.addPaymentSuccess,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: const AddPaymentSuccessPage(),
+          );
+        },
+      ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: RoutesNames.settings,
