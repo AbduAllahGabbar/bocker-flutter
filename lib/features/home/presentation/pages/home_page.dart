@@ -358,29 +358,54 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    Text(
+                      '$prefix${transaction.amount?.toStringAsFixed(2) ?? '0.00'}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: amountColor,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  dateStr,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      dateStr,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    if (transaction.transactionStatus?.name != null)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          transaction.transactionStatus!.name!,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                        ),
                       ),
+                  ],
                 ),
               ],
             ),
           ),
-          Text(
-            '$prefix${transaction.amount?.toStringAsFixed(2) ?? '0.00'}',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: amountColor,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
+
         ],
       ),
     );

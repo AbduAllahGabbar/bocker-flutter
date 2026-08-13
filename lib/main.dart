@@ -83,8 +83,6 @@ class _MyAppState extends State<MyApp> {
       providers: [
         BlocProvider(create: (_) => di<AuthCubit>()),
         BlocProvider(create: (_) => di<AppCubit>()),
-        BlocProvider(create: (_) => DI.initProfile()),
-        BlocProvider(create: (_) => DI.initAccounts()),
       ],
       child: BlocBuilder<AppCubit, AppState>(
         builder: (context, state) {
