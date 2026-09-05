@@ -64,9 +64,9 @@ class _ChatViewState extends State<_ChatView> {
 
   Future<void> _pickFile() async {
     final result = await FilePicker.pickFiles();
-    if (result != null && result.files.single.path != null && mounted) {
+    if (result.isNotEmpty && result.first.path != null && mounted) {
       context.read<ChatCubit>().sendFileMessage(
-        result.files.single.path!,
+        result.first.path!,
         isImage: false,
       );
     }

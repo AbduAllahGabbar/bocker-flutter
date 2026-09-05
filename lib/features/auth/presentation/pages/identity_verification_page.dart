@@ -62,9 +62,9 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
         type: type,
         allowMultiple: false,
       );
-      if (result != null && result.files.single.path != null) {
+      if (result.isNotEmpty && result.first.path != null) {
         setState(() {
-          onPicked(result.files.single.path!);
+          onPicked(result.first.path!);
         });
       }
     } catch (e) {

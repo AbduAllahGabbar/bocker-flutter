@@ -109,9 +109,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                 onTap: () async {
                   Navigator.pop(ctx);
                   final result = await FilePicker.pickFiles();
-                  if (result != null && result.files.single.path != null) {
+                  if (result.isNotEmpty && result.first.path != null) {
                     setState(() {
-                      _selectedFilePath = result.files.single.path;
+                      _selectedFilePath = result.first.path;
                       _isImage = false;
                     });
                   }
