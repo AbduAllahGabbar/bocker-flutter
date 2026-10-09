@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:boker/core/config/local/token_cache_service.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../auth/data/models/user_model.dart';
-import 'package:dartz/dartz.dart';
 
 abstract class ProfileRemoteDataSource {
   Future<Either<Failure, UserModel>> fetchUserView(String userId);

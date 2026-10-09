@@ -57,7 +57,7 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
           },
         );
 
-        if (state.maybeWhen(error: (_, __) => true, orElse: () => false)) return;
+        if (state.maybeWhen(error: (_, _) => true, orElse: () => false)) return;
       }
 
       await _repository.replyTicket(payload);
@@ -68,7 +68,7 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
         "desc": desc,
         "date": DateTime.now().toIso8601String(),
         "user": {"name": "Me"}, // simple mock for UI
-        if (uploadedFileMap != null) "file": uploadedFileMap,
+        "file": ?uploadedFileMap,
       });
       _ticket['replyList'] = replies;
       _ticket['isReplied'] = true;

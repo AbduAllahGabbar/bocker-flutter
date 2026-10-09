@@ -1,3 +1,4 @@
+import 'package:boker/core/network/dio/dio_factory.dart';
 import 'package:dio/dio.dart';
 import '../../errors/failure.dart';
 
@@ -56,7 +57,10 @@ class CountryModel {
 
 // Country API Services
 class CountryApiServices {
-  final Dio _dio = Dio();
+  final Dio dio;
+
+  CountryApiServices({Dio?dio}):dio = dio ?? DioFactory().getDio();
+
   List<CountryModel>? _cachedCountries;
 
   // Get all countries from API (cached in memory after first load)
@@ -65,13 +69,8 @@ class CountryApiServices {
       return _cachedCountries!;
     }
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         '/countries/all',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        ),
         data: {
           "select": {
             "id": 1,

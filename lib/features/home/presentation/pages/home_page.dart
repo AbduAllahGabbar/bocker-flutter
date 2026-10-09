@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:res_reline/my_responsive.dart';
 import '../../../../core/config/routes/routes_manager.dart';
-import '../../../../core/config/theme/theme.dart';
 import '../../../transactions/presentation/cubit/transactions_cubit.dart';
 import '../../../transactions/presentation/cubit/transactions_state.dart';
 import '../../../transactions/data/models/transaction_model.dart';
@@ -18,7 +17,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<String> filters = ['All', 'Deposit', 'Transfer', 'Withdraw'];
+  final List<String> filters = [
+    'All',
+    'Deposit',
+    'Transfer',
+    'Withdraw',
+    'Balance-Correction',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -36,20 +41,20 @@ class _HomePageState extends State<HomePage> {
               SliverPadding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
                 sliver: SliverList(
-                  delegate: SliverChildListDelegate(
-                    [
-                      _buildHeader(),
-                      SizedBox(height: 24.h),
-                      _buildWalletCard(),
-                      SizedBox(height: 24.h),
-                      _buildActionButtons(),
-                      SizedBox(height: 32.h),
-                      _buildTransactionsHeader(),
-                      SizedBox(height: 16.h),
-                      _buildFilterChips(),
-                      SizedBox(height: 16.h),
-                    ],
-                  ),
+                  delegate: SliverChildListDelegate([
+                    _buildHeader(),
+                    SizedBox(height: 24.h),
+                    _buildWalletCard(),
+                    SizedBox(height: 24.h),
+                    _buildActionButtons(),
+                    SizedBox(height: 24.h),
+                    _buildMT5DataButton(),
+                    SizedBox(height: 32.h),
+                    _buildTransactionsHeader(),
+                    SizedBox(height: 16.h),
+                    _buildFilterChips(),
+                    SizedBox(height: 16.h),
+                  ]),
                 ),
               ),
               _buildTransactionsList(),
@@ -68,9 +73,9 @@ class _HomePageState extends State<HomePage> {
       children: [
         Text(
           'Home',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: colorScheme.onSurface,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineLarge?.copyWith(color: colorScheme.onSurface),
         ),
         Container(
           decoration: BoxDecoration(
@@ -89,7 +94,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: EdgeInsets.all(24.r),
       decoration: BoxDecoration(
-        color: colorScheme.primary, 
+        color: colorScheme.primary,
         borderRadius: BorderRadius.circular(24.r),
       ),
       child: Column(
@@ -101,27 +106,30 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'MY WALLET\nAccount #7',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimary.withValues(alpha: 0.7),
-                      height: 1.5,
-                    ),
+                  color: colorScheme.onPrimary.withValues(alpha: 0.7),
+                  height: 1.5,
+                ),
               ),
-              Icon(Icons.account_balance_wallet_outlined, color: colorScheme.secondary),
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                color: colorScheme.secondary,
+              ),
             ],
           ),
           SizedBox(height: 24.h),
           Text(
             'Available Balance',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onPrimary.withValues(alpha: 0.7),
-                ),
+              color: colorScheme.onPrimary.withValues(alpha: 0.7),
+            ),
           ),
           SizedBox(height: 8.h),
           Text(
             '\$12,450.00',
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -133,14 +141,69 @@ class _HomePageState extends State<HomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildActionButton(Icons.arrow_downward, 'Deposit', colorScheme.primaryContainer, colorScheme.primary, 'deposit'),
-        _buildActionButton(Icons.swap_horiz, 'Transfer', colorScheme.secondaryContainer, colorScheme.onSecondaryContainer, 'transfer'),
-        _buildActionButton(Icons.arrow_upward, 'Withdraw', colorScheme.errorContainer, colorScheme.error, 'withdraw'),
+        _buildActionButton(
+          Icons.arrow_downward,
+          'Deposit',
+          colorScheme.primaryContainer,
+          colorScheme.primary,
+          'deposit',
+        ),
+        _buildActionButton(
+          Icons.swap_horiz,
+          'Transfer',
+          colorScheme.secondaryContainer,
+          colorScheme.onSecondaryContainer,
+          'transfer',
+        ),
+        _buildActionButton(
+          Icons.arrow_upward,
+          'Withdraw',
+          colorScheme.errorContainer,
+          colorScheme.error,
+          'withdraw',
+        ),
       ],
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, Color bgColor, Color iconColor, String type) {
+
+
+  Widget _buildMT5DataButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          context.pushNamed(RoutesNames.mt5Data);
+        },
+        icon: Icon(Icons.analytics, color: colorScheme.onSurface),
+        label: Text(
+          'MT5 Data',
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+            fontSize: 16.sp,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    IconData icon,
+    String label,
+    Color bgColor,
+    Color iconColor,
+    String type,
+  ) {
     return Expanded(
       child: Card(
         margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -163,7 +226,9 @@ class _HomePageState extends State<HomePage> {
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16.h),
             decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               borderRadius: BorderRadius.circular(16.r),
             ),
             child: Column(
@@ -180,9 +245,9 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -199,9 +264,9 @@ class _HomePageState extends State<HomePage> {
       children: [
         Text(
           'Transactions',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
         ),
         TextButton(
           onPressed: () {},
@@ -223,8 +288,11 @@ class _HomePageState extends State<HomePage> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: filters.map((filter) {
-          final isSelected = context.watch<TransactionsCubit>().currentFilter == filter.toLowerCase() ||
-              (filter == 'All' && context.watch<TransactionsCubit>().currentFilter == null);
+          final isSelected =
+              context.watch<TransactionsCubit>().currentFilter ==
+                  filter.toLowerCase() ||
+              (filter == 'All' &&
+                  context.watch<TransactionsCubit>().currentFilter == null);
           return Padding(
             padding: EdgeInsets.only(right: 8.w),
             child: ChoiceChip(
@@ -233,21 +301,25 @@ class _HomePageState extends State<HomePage> {
               onSelected: (selected) {
                 if (selected) {
                   context.read<TransactionsCubit>().fetchTransactions(
-                        filterType: filter.toLowerCase(),
-                      );
+                    filterType: filter.toLowerCase(),
+                  );
                 }
               },
               backgroundColor: colorScheme.surfaceContainerHighest,
               selectedColor: colorScheme.primaryContainer,
               labelStyle: TextStyle(
-                color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
+                color: isSelected
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
               side: BorderSide.none,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20.r),
                 side: BorderSide(
-                  color: isSelected ? colorScheme.outlineVariant : Colors.transparent,
+                  color: isSelected
+                      ? colorScheme.outlineVariant
+                      : Colors.transparent,
                 ),
               ),
             ),
@@ -262,12 +334,14 @@ class _HomePageState extends State<HomePage> {
       builder: (context, state) {
         if (state is TransactionsLoading) {
           return SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           );
         } else if (state is TransactionsError) {
-          return SliverToBoxAdapter(
-            child: Center(child: Text(state.message)),
-          );
+          return SliverToBoxAdapter(child: Center(child: Text(state.message)));
         } else if (state is TransactionsLoaded) {
           if (state.transactions.isEmpty) {
             return const SliverToBoxAdapter(
@@ -275,16 +349,13 @@ class _HomePageState extends State<HomePage> {
             );
           }
           return SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final transaction = state.transactions[index];
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                  child: _buildTransactionTile(transaction),
-                );
-              },
-              childCount: state.transactions.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final transaction = state.transactions[index];
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                child: _buildTransactionTile(transaction),
+              );
+            }, childCount: state.transactions.length),
           );
         }
         return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -313,6 +384,12 @@ class _HomePageState extends State<HomePage> {
       iconColor = colorScheme.error;
       amountColor = colorScheme.error;
       prefix = '-';
+    } else if (transaction.type == 'balance-correction') {
+      icon = Icons.account_balance_wallet;
+      iconBgColor = colorScheme.tertiaryContainer;
+      iconColor = colorScheme.onTertiaryContainer;
+      amountColor = colorScheme.onSurface;
+      prefix = '';
     } else {
       icon = Icons.swap_horiz;
       iconBgColor = colorScheme.secondaryContainer;
@@ -323,7 +400,7 @@ class _HomePageState extends State<HomePage> {
 
     String title = transaction.paymentMethod?.name ?? 'Unknown';
     if (transaction.type == 'transfer' && transaction.account != null) {
-        title = 'Account -> #${transaction.account?.accountId ?? ''}';
+      title = 'Account -> #${transaction.account?.accountId ?? ''}';
     }
 
     String dateStr = '';
@@ -364,8 +441,8 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       '$prefix${transaction.amount?.toStringAsFixed(2) ?? '0.00'}',
@@ -383,21 +460,23 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       dateStr,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     if (transaction.transactionStatus?.name != null)
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
                           transaction.transactionStatus!.name!,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ),
                   ],
@@ -405,7 +484,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
         ],
       ),
     );

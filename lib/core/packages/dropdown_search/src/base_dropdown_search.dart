@@ -699,8 +699,8 @@ class DropdownSearchState<T> extends State<BaseDropdownSearch<T>> {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
-        if (clearButton != null) clearButton,
-        if (dropdownButton != null) dropdownButton,
+        ?clearButton,
+        ?dropdownButton,
       ],
     );
   }
@@ -755,15 +755,15 @@ class DropdownSearchState<T> extends State<BaseDropdownSearch<T>> {
             : (widget.popupProps as CupertinoPopupProps<T>).dialogProps,
         [
           CupertinoDialogAction(
-            child: Text("Cancel"),
             isDestructiveAction: true,
             onPressed: () => closeDropDownSearch(),
+            child: Text("Cancel"),
           ),
           if (isMultiSelectionMode)
             CupertinoDialogAction(
-              child: Text("OK"),
               isDefaultAction: true,
               onPressed: () => _popupStateKey.currentState?.onValidate(),
+              child: Text("OK"),
             ),
         ],
       );

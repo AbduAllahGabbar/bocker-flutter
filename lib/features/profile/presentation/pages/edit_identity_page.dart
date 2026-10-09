@@ -41,8 +41,9 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
     _hasExpirationDate = widget.initialForm['docExpiry'] == 'yes';
     
     final dt = widget.initialForm['docType']?.toString();
-    if (dt == 'passport') _documentType = 'Passport';
-    else if (dt == 'national-id') _documentType = 'National ID';
+    if (dt == 'passport') {
+      _documentType = 'Passport';
+    } else if (dt == 'national-id') _documentType = 'National ID';
 
     if (widget.initialForm['countryIssue'] != null) {
       _selectedCountry = CountryModel.fromJson(widget.initialForm['countryIssue']);
@@ -174,7 +175,7 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
     bool isImage = false,
   }) {
     final theme = Theme.of(context);
-    final fileName = filePath != null ? filePath.split(Platform.pathSeparator).last : null;
+    final fileName = filePath?.split(Platform.pathSeparator).last;
 
     return InkWell(
       onTap: onTap,
@@ -185,7 +186,7 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: filePath != null ? const Color(0xFF6366F1) : theme.colorScheme.outlineVariant.withOpacity(0.5),
+            color: filePath != null ? const Color(0xFF6366F1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: filePath != null ? 1.5 : 1.0,
           ),
         ),
@@ -197,7 +198,7 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
                       children: [
                         Positioned.fill(
                           child: filePath.startsWith('/x-api') 
-                            ? Image.network('https://boker.egytag.com' + filePath, fit: BoxFit.cover) 
+                            ? Image.network('https://boker.egytag.com$filePath', fit: BoxFit.cover) 
                             : Image.file(File(filePath), fit: BoxFit.cover),
                         ),
                         Positioned(
@@ -205,7 +206,7 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
                           child: Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
                                 begin: Alignment.topCenter, end: Alignment.bottomCenter,
                               ),
                             ),
@@ -351,7 +352,7 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
 
                 _buildSectionTitle('DOCUMENT TYPE'),
                 DropdownButtonFormField<String>(
-                  value: _documentType,
+                  initialValue: _documentType,
                   hint: Text('Select Document Type'.tran),
                   items: ['Passport', 'National ID'].map((e) => DropdownMenuItem(value: e, child: Text(e.tran))).toList(),
                   onChanged: (val) {

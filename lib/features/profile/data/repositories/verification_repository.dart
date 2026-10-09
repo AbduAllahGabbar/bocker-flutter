@@ -1,6 +1,4 @@
 import 'package:boker/features/profile/data/models/document_model.dart';
-import 'package:boker/core/di/di_container.dart';
-import 'package:boker/core/config/local/token_cache_service.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import '../../../../core/errors/failure.dart';

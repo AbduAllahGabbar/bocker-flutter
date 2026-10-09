@@ -531,7 +531,7 @@ class _ProfileMenuTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.s),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -583,7 +583,7 @@ class _ProfileMenuTile extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 size: 24.s,
               ),
             ],
@@ -611,7 +611,7 @@ class _ProfileInfoTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.s),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 2),

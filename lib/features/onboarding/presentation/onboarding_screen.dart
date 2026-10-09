@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -11,17 +10,13 @@ import 'package:boker/core/componants/my_elevated_button.dart';
 import 'package:boker/core/config/local/cache_service.dart';
 import 'package:boker/core/utils/constants/app_constants.dart';
 import 'package:boker/features/app/app_cubit.dart';
-import 'package:boker/features/auth/presentation/auth_widgets.dart';
 
 import '../../../core/config/language/language_manager.dart';
 import '../../../core/config/routes/routes_manager.dart';
-import '../../auth/presentation/google_button_widget.dart';
-import '../../auth/presentation/sign_up_page.dart';
 import 'onboarding_contents.dart';
-import 'size_config.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -119,7 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           colors: [
                                             Colors.white,
                                             Colors.white,
-                                            Colors.white.withOpacity(0.6),
+                                            Colors.white.withValues(alpha: 0.6),
                                             Colors.transparent,
                                           ],
                                           stops: const [0.0, 0.75, 0.92, 1.0],
@@ -431,7 +426,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _LanguageBottomSheetContent extends StatefulWidget {
-  const _LanguageBottomSheetContent({Key? key}) : super(key: key);
+  const _LanguageBottomSheetContent();
 
   @override
   State<_LanguageBottomSheetContent> createState() =>

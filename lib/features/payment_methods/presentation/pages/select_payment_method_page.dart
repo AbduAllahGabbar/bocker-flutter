@@ -173,9 +173,9 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
       child: Container(
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primaryContainer.withOpacity(0.3) : colorScheme.surfaceContainerLowest,
+          color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.3) : colorScheme.surfaceContainerLowest,
           border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withOpacity(0.5),
+            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: isSelected ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(16.r),

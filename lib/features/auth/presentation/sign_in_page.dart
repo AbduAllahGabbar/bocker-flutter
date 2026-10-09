@@ -1,22 +1,16 @@
-import 'dart:async';
-import 'package:boker/features/app/app_cubit.dart';
 import 'package:easy_localization/easy_localization.dart'
     show BuildContextEasyLocalizationExtension;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:res_reline/my_responsive.dart';
 import 'package:boker/core/componants/logo_widget.dart';
 import 'package:boker/core/componants/my_elevated_button.dart';
 import 'package:boker/core/componants/toast.dart';
-import 'package:boker/core/config/theme/theme.dart';
 import 'package:boker/core/utils/constants/app_constants.dart';
 import '../../../core/componants/phone_from_intel.dart';
 import '../../../core/config/language/language_manager.dart';
 import '../../../core/config/routes/routes_manager.dart';
-import '../../../core/di/di_container.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'auth_widgets.dart';
@@ -260,7 +254,7 @@ class _SignInPageState extends State<SignInPage> {
                                 onPressed: () {
                                   Router.neglect(
                                     context,
-                                    () => context.goNamed(RoutesNames.signUp),
+                                    () => context.pushNamed(RoutesNames.signUp),
                                   );
                                 },
                                 child: Text(

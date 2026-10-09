@@ -37,7 +37,6 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
   String cardNumber = '';
   String expiryDate = '';
   String cardHolderName = '';
-  String cvvCode = '';
   bool isCvvFocused = false;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -54,7 +53,6 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
         "cardNumber": cardNumber,
         "cardholderName": cardHolderName,
         "cardExpiryDate": dateStr, 
-        "cvvCode": cvvCode,
       };
 
       context.read<AddPaymentMethodCubit>().submitPaymentMethod(data);
@@ -69,7 +67,6 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
         cardNumber = creditCardModel.cardNumber;
         expiryDate = creditCardModel.expiryDate;
         cardHolderName = creditCardModel.cardHolderName;
-        cvvCode = creditCardModel.cvvCode;
         isCvvFocused = creditCardModel.isCvvFocused;
       });
     }
@@ -137,7 +134,7 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                     cardNumber: cardNumber,
                     expiryDate: expiryDate,
                     cardHolderName: cardHolderName,
-                    cvvCode: cvvCode,
+                    cvvCode: 'xxx',
                     bankName: 'BrokerPro',
                     showBackView: isCvvFocused,
                     obscureCardNumber: true,
@@ -162,10 +159,10 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                     obscureCvv: true,
                     obscureNumber: true,
                     cardNumber: cardNumber,
-                    cvvCode: cvvCode,
                     isHolderNameVisible: true,
                     isCardNumberVisible: true,
                     isExpiryDateVisible: true,
+                    cvvCode: 'xxx',
                     cardHolderName: cardHolderName,
                     expiryDate: expiryDate,
                     onCreditCardModelChange: onCreditCardModelChange,

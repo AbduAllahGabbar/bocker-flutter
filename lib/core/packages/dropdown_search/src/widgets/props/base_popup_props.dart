@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../dropdown_search.dart';
-import '../../base_dropdown_search.dart';
 import '../../properties/base_text_field_props.dart';
-import '../../properties/infinite_scroll_props.dart';
-import '../../properties/list_view_props.dart';
-import '../../properties/scrollbar_props.dart';
-import 'inkwell_props.dart';
-import 'text_field_props.dart';
 
 abstract class BasePopupProps<T> {
   /// popup title

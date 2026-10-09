@@ -3,7 +3,6 @@ import 'package:easy_localization/easy_localization.dart' show BuildContextEasyL
 import 'package:flutter/gestures.dart';
 import 'package:boker/core/componants/logo_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:res_reline/my_responsive.dart';
@@ -21,7 +20,10 @@ import 'auth_widgets.dart';
 import 'pages/otp_fields.dart';
 
 class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+  final String? refParam;
+  final String? accGroupIdParam;
+  
+  const SignUpPage({super.key, this.refParam, this.accGroupIdParam});
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -30,7 +32,6 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
-  final _companyNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _idNumberController = TextEditingController();
@@ -55,10 +56,43 @@ class _SignUpPageState extends State<SignUpPage> {
   String? _otpEmail;
   String? _otpPassword;
 
+  List<Map<String, dynamic>> _mt5Groups = [];
+  Map<String, dynamic>? _selectedMt5Group;
+  bool _isLoadingMt5Groups = true;
+  bool _hasErrorMt5Groups = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMt5Groups();
+  }
+
+  Future<void> _fetchMt5Groups() async {
+    try {
+      final authCubit = context.read<AuthCubit>();
+      final list = await authCubit.getMt5Groups();
+      
+      if (mounted) {
+        setState(() {
+          _mt5Groups = list;
+          _isLoadingMt5Groups = false;
+          _hasErrorMt5Groups = list.isEmpty;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasErrorMt5Groups = true;
+          _isLoadingMt5Groups = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
-    _companyNameController.dispose();
+    _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
     _idNumberController.dispose();
@@ -154,8 +188,18 @@ class _SignUpPageState extends State<SignUpPage> {
         "isIb": _agreeToIB,
       };
 
+      if (widget.refParam != null) {
+        data[r"$ref"] = widget.refParam;
+      }
+      if (widget.accGroupIdParam != null) {
+        data[r"$accGroupId"] = int.tryParse(widget.accGroupIdParam!) ?? widget.accGroupIdParam;
+      }
+      if (_selectedMt5Group != null) {
+        data["mt5Group"] = _selectedMt5Group;
+      }
+
       if (_isCompany) {
-        data["companyName"] = _companyNameController.text.trim();
+        data["firstName"] = _firstNameController.text.trim();
       } else {
         data["birthDate"] = _dobController.text.trim();
         data["firstName"] = _firstNameController.text.trim();
@@ -244,7 +288,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     'Registration successful!'.tran,
                   );
                 }
-                context.pop();
               },
               error: (message) {
                 ToastState.error.snackBar(context, message);
@@ -415,7 +458,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               AuthTextField(
                                 label: 'Company Name'.tran,
                                 hintText: 'Enter Company Name'.tran,
-                                controller: _companyNameController,
+                                controller: _firstNameController,
                                 keyboardType: TextInputType.text,
                                 validator: (val) => val == null || val.isEmpty ? 'Required'.tran : null,
                                 textInputAction: TextInputAction.next,
@@ -614,6 +657,62 @@ class _SignUpPageState extends State<SignUpPage> {
                               },
                             ),
                             const SizedBox(height: 24),
+
+                            // MT5 Group Selection
+                            if (_isLoadingMt5Groups)
+                              const Center(child: CircularProgressIndicator())
+                            else if (_hasErrorMt5Groups)
+                              Text('Failed to load MT5 Groups'.tran, style: TextStyle(color: Colors.red))
+                            else if (_mt5Groups.isNotEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'MT5 Group'.tran,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurface,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14.h,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  DropdownButtonFormField<Map<String, dynamic>>(
+                                    initialValue: _selectedMt5Group,
+                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: colorScheme.surface,
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(color: colorScheme.primary),
+                                      ),
+                                    ),
+                                    hint: Text('Select MT5 Group'.tran),
+                                    items: _mt5Groups.map((group) {
+                                      return DropdownMenuItem<Map<String, dynamic>>(
+                                        value: group,
+                                        child: Text(group['name'].toString()),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedMt5Group = value;
+                                      });
+                                    },
+                                    validator: (value) => value == null ? 'Please select an MT5 Group'.tran : null,
+                                  ),
+                                  const SizedBox(height: 24),
+                                ],
+                              ),
 
                             // Terms and Conditions checkbox
                             Row(

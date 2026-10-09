@@ -125,8 +125,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
   }
 
   void _sendReply(BuildContext context) {
-    if (_replyController.text.trim().isEmpty && _selectedFilePath == null)
+    if (_replyController.text.trim().isEmpty && _selectedFilePath == null) {
       return;
+    }
 
     context.read<TicketDetailsCubit>().replyToTicket(
       desc: _replyController.text.trim(),
@@ -352,7 +353,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
           } else {
             return _buildAgentMessage(text, date);
           }
-        }).toList(),
+        }),
         SizedBox(height: 20.s),
       ],
     );
@@ -414,7 +415,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
   }
 
   Widget _buildUserMessage(String text, dynamic fileMap, String dateStr) {
-    final companyName = "My Company";
+    final firstName = "My Company";
     return Padding(
       padding: EdgeInsets.only(bottom: 24.s),
       child: Column(
@@ -424,7 +425,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
-                'منذ 38 ثانية  •  $companyName', // Mock time like UI
+                'منذ 38 ثانية  •  $firstName', // Mock time like UI
                 style: TextStyle(fontSize: 11.s, color: Colors.grey.shade500),
               ),
               SizedBox(width: 8.s),
@@ -482,9 +483,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
       width: 240.s,
       height: 140.s,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.s),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Stack(
         children: [
@@ -495,7 +496,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                   ? Image.network(
                       'https://boker.egytag.com$url',
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
+                      errorBuilder: (_, _, _) =>
                           const Icon(Icons.broken_image, color: Colors.white),
                     )
                   : (path != null
@@ -513,7 +514,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 8.s),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.9),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(12.s),
                   bottomRight: Radius.circular(12.s),

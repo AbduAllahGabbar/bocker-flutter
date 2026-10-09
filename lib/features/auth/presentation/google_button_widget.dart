@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:res_reline/my_responsive.dart';
-import 'package:boker/features/auth/presentation/sign_up_page.dart';
 
 import '../../../core/config/language/language_manager.dart';
 import '../cubit/auth_cubit.dart';

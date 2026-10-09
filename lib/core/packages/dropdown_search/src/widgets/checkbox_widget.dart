@@ -19,7 +19,7 @@ class CheckBoxWidget extends StatefulWidget {
   final TextDirection textDirection;
   final UiToApply uiToApply;
 
-  CheckBoxWidget({
+  const CheckBoxWidget({
     super.key,
     required this.clickProps,
     this.isChecked = false,

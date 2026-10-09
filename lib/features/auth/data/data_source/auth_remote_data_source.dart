@@ -3,7 +3,6 @@ import 'package:boker/core/data/constants/apis_constants.dart';
 import 'package:boker/core/config/local/token_cache_service.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/services/upload_files_services/upload_files_services.dart';
-import '../enums/user_role.dart';
 import '../models/user_model.dart';
 import '../models/register_response.dart';
 
@@ -116,6 +115,8 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<Either<Failure, bool>> updateIsIb();
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getMt5Groups();
 
   // Future<UserModel> completeRegistration({
   //   required String userId,
@@ -568,6 +569,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         return Failure.server(
           response.statusMessage ?? 'Failed to become IB',
         ).left();
+      }
+    } on DioException catch (e) {
+      return Failure.server(_handleDioError(e)).left();
+    } catch (e) {
+      return Failure.internal(e.toString()).left();
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>> getMt5Groups() async {
+    try {
+      final response = await _dio.post('/site-setting/mt5Groups-public', data: {});
+      if (response.statusCode == 200 && response.data['done'] == true) {
+        final list = response.data['list'] as List;
+        return Right(list.cast<Map<String, dynamic>>());
+      } else {
+        return Failure.server('Failed to load MT5 Groups').left();
       }
     } on DioException catch (e) {
       return Failure.server(_handleDioError(e)).left();

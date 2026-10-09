@@ -333,4 +333,12 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   void updateUser(UserModel user) {
     emit(auth_state.AuthState.authenticated(user: user));
   }
+
+  Future<List<Map<String, dynamic>>> getMt5Groups() async {
+    final result = await _authRepository.getMt5Groups();
+    return result.fold(
+      (l) => [],
+      (r) => r,
+    );
+  }
 }

@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:boker/core/utils/constants/app_constants.dart';
-import 'package:boker/core/utils/constants/app_constants.dart';
-import 'package:boker/core/utils/constants/app_constants.dart';
-import 'package:boker/core/utils/constants/app_constants.dart';
-import 'package:boker/core/utils/constants/app_constants.dart';
 
 class ColorsManager {
   ColorsManager._();

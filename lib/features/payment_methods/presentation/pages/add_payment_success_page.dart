@@ -25,7 +25,7 @@ class AddPaymentSuccessPage extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.3),
+                      color: colorScheme.primary.withValues(alpha: 0.3),
                       blurRadius: 40,
                       spreadRadius: 10,
                     ),

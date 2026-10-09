@@ -2,14 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:boker/core/config/routes/router_checker.dart';
+import '../../../features/accounts/data/models/account_model.dart';
 import '../../../features/auth/data/repository/user_access.dart';
 import '../../../features/layout/presentation/pages/layout_view.dart';
 import '../../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../di/di_container.dart';
 import 'auth_routes/auth_router.dart';
 import '../../../features/home/presentation/pages/home_page.dart';
-import '../../../features/transactions/presentation/cubit/transactions_cubit.dart';
-import '../../../features/transactions/presentation/cubit/add_transaction_cubit.dart';
+import '../../../features/mt5_data/presentation/pages/mt5_data_page.dart';
 import '../../../features/transactions/presentation/pages/add_transaction_page.dart';
 import '../../../features/profile/presentation/pages/profile_page.dart';
 import '../../../features/profile/presentation/pages/settings_page.dart';
@@ -37,6 +37,8 @@ import '../../../features/profile/presentation/pages/change_password_page.dart';
 import '../../../features/profile/presentation/cubit/account_cubit.dart';
 import '../../../features/accounts/presentation/pages/accounts_page.dart';
 import '../../../features/accounts/presentation/pages/create_account_page.dart';
+import '../../../features/ib_dashboard/presentation/pages/ib_dashboard_page.dart';
+import '../../../features/ib_dashboard/presentation/pages/ib_transactions_page.dart';
 
 class RoutesNames {
   const RoutesNames._();
@@ -62,6 +64,9 @@ class RoutesNames {
   static const String addCardPayment = "add-card-payment";
   static const String addBankPayment = "add-bank-payment";
   static const String addPaymentSuccess = "add-payment-success";
+  static const String mt5Data = "mt5-data";
+  static const String ibDashboard = "ib-dashboard";
+  static const String ibTransactions = "ib-transactions";
 
   static const String home = "home";
   static const String checkout = "checkout";
@@ -181,13 +186,53 @@ class RouterManger {
         path: "/${RoutesNames.addTransaction}",
         name: RoutesNames.addTransaction,
         pageBuilder: (context, state) {
-          final type = state.extra as String? ?? 'deposit';
+          final extra = state.extra;
+          String type = 'deposit';
+          AccountModel? account;
+          if (extra is String) {
+            type = extra;
+          } else if (extra is Map) {
+            type = extra['type'] as String? ?? 'deposit';
+            account = extra['account'] as AccountModel?;
+          }
           return RouterManger.buildPageWithDefaultTransition(
             context: context,
             state: state,
             child: BlocProvider(
               create: (context) => DI.initAddTransaction(),
-              child: AddTransactionPage(initialType: type),
+              child: AddTransactionPage(initialType: type, initialAccount: account),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: "/${RoutesNames.mt5Data}",
+        name: RoutesNames.mt5Data,
+        pageBuilder: (context, state) {
+          final account = state.extra as AccountModel?;
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => DI.initMt5Data()..init(initialAccount: account),
+              child: const Mt5DataPage(),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: "/${RoutesNames.ibTransactions}",
+        name: RoutesNames.ibTransactions,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final title = extra['title'] as String? ?? 'Transactions';
+          final typeCode = extra['typeCode'] as String? ?? 'repate';
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => DI.initIbTransactionsCubit(typeCode)..init(),
+              child: IbTransactionsPage(title: title),
             ),
           );
         },
@@ -208,7 +253,23 @@ class RouterManger {
       StatefulShellBranch(routes: [_homeRoute]),
       StatefulShellBranch(routes: [_accountsRoute]),
       StatefulShellBranch(routes: [_profileRoute]),
+      StatefulShellBranch(routes: [_ibDashboardRoute]),
     ],
+  );
+
+  static final _ibDashboardRoute = GoRoute(
+    path: "/${RoutesNames.ibDashboard}",
+    name: RoutesNames.ibDashboard,
+    pageBuilder: (context, state) {
+      return RouterManger.buildPageWithDefaultTransition(
+        context: context,
+        state: state,
+        child: BlocProvider(
+          create: (context) => DI.initIbDashboardCubit()..init(),
+          child: const IbDashboardPage(),
+        ),
+      );
+    },
   );
 
   static final _homeRoute = GoRoute(

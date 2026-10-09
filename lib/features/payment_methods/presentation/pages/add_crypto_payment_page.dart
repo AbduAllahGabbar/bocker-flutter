@@ -223,7 +223,7 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
                   Container(
                     padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
-                      color: colorScheme.tertiaryContainer.withOpacity(0.3),
+                      color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: colorScheme.tertiaryContainer),
                     ),

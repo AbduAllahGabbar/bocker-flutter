@@ -114,9 +114,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
   }) {
     final theme = Theme.of(context);
 
-    final fileName = filePath != null
-        ? filePath.split(Platform.pathSeparator).last
-        : null;
+    final fileName = filePath?.split(Platform.pathSeparator).last;
 
     return InkWell(
       onTap: onTap,
@@ -129,7 +127,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
           border: Border.all(
             color: filePath != null
                 ? const Color(0xFF6366F1)
-                : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: filePath != null ? 1.5 : 1.0,
           ),
         ),
@@ -141,7 +139,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                       children: [
                         Positioned.fill(
                           child: filePath.startsWith('/x-api') 
-                            ? Image.network('https://boker.egytag.com${filePath}', fit: BoxFit.cover) 
+                            ? Image.network('https://boker.egytag.com$filePath', fit: BoxFit.cover) 
                             : Image.file(File(filePath), fit: BoxFit.cover),
                         ),
                         Positioned(
@@ -149,7 +147,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                           child: Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
                                 begin: Alignment.topCenter, end: Alignment.bottomCenter,
                               ),
                             ),

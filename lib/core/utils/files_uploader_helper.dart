@@ -88,7 +88,7 @@ class FilesUploaderHelper {
         data: {
           "email": email,
           "identityForm": identityForm,
-          if (addressForm != null) "addressForm": addressForm,
+          "addressForm": ?addressForm,
         },
       );
 

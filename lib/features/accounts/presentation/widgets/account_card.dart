@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:res_reline/my_responsive.dart';
-import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../data/models/account_model.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/config/routes/routes_manager.dart';
 
 class AccountCard extends StatelessWidget {
   final AccountModel account;
@@ -92,6 +93,54 @@ class AccountCard extends StatelessWidget {
               ),
             ],
           ),
+          SizedBox(height: 16.s),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionBtn(
+                  context, 
+                  'Deposit'.tran, 
+                  Icons.arrow_downward, 
+                  Colors.green, 
+                  isDark, 
+                  () => context.pushNamed(
+                    RoutesNames.addTransaction,
+                    extra: {'type': 'deposit', 'account': account},
+                  )
+                ),
+              ),
+              SizedBox(width: 8.s),
+              Expanded(
+                child: _buildActionBtn(
+                  context, 
+                  'Withdraw'.tran, 
+                  Icons.arrow_upward, 
+                  Colors.red, 
+                  isDark, 
+                  () => context.pushNamed(
+                    RoutesNames.addTransaction,
+                    extra: {'type': 'withdrawal', 'account': account},
+                  )
+                ),
+              ),
+              if (account.type == 'real') ...[
+                SizedBox(width: 8.s),
+                Expanded(
+                  child: _buildActionBtn(
+                    context, 
+                    'MT5 Data'.tran, 
+                    Icons.analytics, 
+                    Theme.of(context).colorScheme.primary, 
+                    isDark, 
+                    () => context.pushNamed(
+                      RoutesNames.mt5Data,
+                      extra: account,
+                    )
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -118,6 +167,38 @@ class AccountCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActionBtn(BuildContext context, String label, IconData icon, Color color, bool isDark, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8.s),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8.s, horizontal: 4.s),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8.s),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 16.s),
+            SizedBox(height: 4.s),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.s,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

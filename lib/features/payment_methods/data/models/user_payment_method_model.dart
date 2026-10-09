@@ -35,7 +35,6 @@ class UserPaymentMethodModel {
   final String? cardNumber;
   final String? cardholderName;
   final String? cardExpiryDate;
-  final String? cvvCode;
 
   // Crypto fields
   final String? network;
@@ -52,7 +51,6 @@ class UserPaymentMethodModel {
     this.cardNumber,
     this.cardholderName,
     this.cardExpiryDate,
-    this.cvvCode,
     this.network,
     this.walletAddress,
   });
@@ -69,7 +67,6 @@ class UserPaymentMethodModel {
       cardNumber: json['cardNumber'],
       cardholderName: json['cardholderName'],
       cardExpiryDate: json['cardExpiryDate'],
-      cvvCode: json['cvvCode'],
       network: json['network'],
       walletAddress: json['walletAddress'],
     );

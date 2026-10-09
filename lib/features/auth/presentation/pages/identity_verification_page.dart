@@ -305,7 +305,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                       color: const Color(0xFF2A2312), // Dark amber background
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFFF3CD11).withOpacity(0.3),
+                        color: const Color(0xFFF3CD11).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -487,13 +487,15 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-        Text(
-          title.tran,
-          style: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 11.h,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.1,
+        Flexible(
+          child: Text(
+            title.tran,
+            style: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 11.h,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.1,
+            ),
           ),
         ),
       ],
@@ -547,9 +549,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
   }) {
     final theme = Theme.of(context);
 
-    final fileName = filePath != null
-        ? filePath.split(Platform.pathSeparator).last
-        : null;
+    final fileName = filePath?.split(Platform.pathSeparator).last;
 
     return InkWell(
       onTap: onTap,
@@ -562,7 +562,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
           border: Border.all(
             color: filePath != null
                 ? const Color(0xFF6366F1)
-                : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: filePath != null ? 1.5 : 1.0,
           ),
         ),
@@ -587,7 +587,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.black.withOpacity(0.6),
+                                  Colors.black.withValues(alpha: 0.6),
                                   Colors.transparent,
                                 ],
                                 begin: Alignment.topCenter,
@@ -605,7 +605,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                               vertical: 4.h,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.65),
+                              color: Colors.black.withValues(alpha: 0.65),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -657,7 +657,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                         Container(
                           padding: EdgeInsets.all(10.h),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.1),
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -824,7 +824,7 @@ class _SourceTile extends StatelessWidget {
           color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: colorScheme.outlineVariant.withOpacity(0.4),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -832,7 +832,7 @@ class _SourceTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 22),

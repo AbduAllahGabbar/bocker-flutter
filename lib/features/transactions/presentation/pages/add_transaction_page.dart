@@ -7,11 +7,13 @@ import '../../../../features/accounts/data/models/account_model.dart';
 import '../../data/models/payment_method_model.dart';
 import '../cubit/add_transaction_cubit.dart';
 import '../cubit/add_transaction_state.dart';
+import '../widgets/payment_details_widget.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final String initialType; // 'deposit', 'transfer', 'withdraw'
+  final AccountModel? initialAccount;
 
-  const AddTransactionPage({super.key, required this.initialType});
+  const AddTransactionPage({super.key, required this.initialType, this.initialAccount});
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -32,6 +34,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     if (_selectedType == 'withdraw') {
       _selectedType = 'withdrawal'; // Match segmented control label
     }
+    _selectedAccount = widget.initialAccount;
   }
 
   @override
@@ -48,9 +51,15 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       );
       return;
     }
-    if (_selectedAccount == null || _selectedPaymentMethod == null) {
+    if (_selectedAccount == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select account and payment method')),
+        const SnackBar(content: Text('Please select an account')),
+      );
+      return;
+    }
+    if (_selectedType != 'transfer' && _selectedPaymentMethod == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a payment method')),
       );
       return;
     }
@@ -66,8 +75,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           amount: amount,
           accountId: _selectedAccount!.mongoId,
           accountIdNum: num.tryParse(_selectedAccount!.id) ?? 0,
-          paymentMethodCode: _selectedPaymentMethod!.code,
-          paymentMethodName: _selectedPaymentMethod!.name,
+          paymentMethodCode: _selectedPaymentMethod?.code,
+          paymentMethodName: _selectedPaymentMethod?.name,
           accountToId: _selectedType == 'transfer' ? _selectedAccountTo?.mongoId : null,
           accountToIdNum: _selectedType == 'transfer' ? (num.tryParse(_selectedAccountTo?.id ?? '') ?? 0) : null,
         );
@@ -156,30 +165,36 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     popupProps: const PopupProps.menu(showSearchBox: false),
                   ),
                 ],
-                SizedBox(height: 24.h),
-                _buildLabel('PAYMENT METHOD'),
-                DropdownSearch<PaymentMethodModel>(
-                  selectedItem: _selectedPaymentMethod,
-                  items: (filter, loadProps) => cubit.getPaymentMethods(),
-                  compareFn: (item1, item2) => item1.code == item2.code,
-                  onSelected: (val) => setState(() => _selectedPaymentMethod = val),
-                  itemAsString: (item) => item.name,
-                  dropdownBuilder: _buildPaymentMethodDropdownBuilder,
-                  decoratorProps: const DropDownDecoratorProps(
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      isDense: true,
-                      filled: false,
+                if (_selectedType != 'transfer') ...[
+                  SizedBox(height: 24.h),
+                  _buildLabel('PAYMENT METHOD'),
+                  DropdownSearch<PaymentMethodModel>(
+                    key: Key('payment_method_$_selectedType'),
+                    selectedItem: _selectedPaymentMethod,
+                    items: (filter, loadProps) => cubit.getPaymentMethods(type: _selectedType),
+                    compareFn: (item1, item2) => item1.code == item2.code,
+                    onSelected: (val) => setState(() {
+                      _selectedPaymentMethod = val;
+                    }),
+                    itemAsString: (item) => item.name,
+                    dropdownBuilder: _buildPaymentMethodDropdownBuilder,
+                    decoratorProps: const DropDownDecoratorProps(
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
+                        filled: false,
+                      ),
                     ),
+                    suffixProps: const DropdownSuffixProps(
+                      dropdownButtonProps: DropdownButtonProps(isVisible: false),
+                    ),
+                    popupProps: const PopupProps.menu(showSearchBox: false),
                   ),
-                  suffixProps: const DropdownSuffixProps(
-                    dropdownButtonProps: DropdownButtonProps(isVisible: false),
-                  ),
-                  popupProps: const PopupProps.menu(showSearchBox: false),
-                ),
+                  PaymentDetailsWidget(paymentMethod: _selectedPaymentMethod),
+                ],
                 SizedBox(height: 24.h),
                 _buildAmountInput(),
                 SizedBox(height: 24.h),
@@ -207,7 +222,14 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           final isSelected = _selectedType == type;
           return Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => _selectedType = type),
+              onTap: () {
+                if (_selectedType != type) {
+                  setState(() {
+                    _selectedType = type;
+                    _selectedPaymentMethod = null;
+                  });
+                }
+              },
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 12.h),
                 decoration: BoxDecoration(
@@ -248,7 +270,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       ),
     );
   }
-
 
 
   Widget _buildAccountDropdownBuilder(BuildContext context, AccountModel? item) {
@@ -397,8 +418,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           _buildSummaryRow('Type', _selectedType[0].toUpperCase() + _selectedType.substring(1)),
           Divider(color: colorScheme.outlineVariant, height: 24.h),
           _buildSummaryRow('To', _selectedType == 'transfer' ? (_selectedAccountTo != null ? 'Account #${_selectedAccountTo?.id}' : '-') : (_selectedAccount != null ? 'Account #${_selectedAccount?.id}' : '-')),
-          Divider(color: colorScheme.outlineVariant, height: 24.h),
-          _buildSummaryRow('Method', _selectedPaymentMethod?.name ?? '-'),
+          if (_selectedType != 'transfer') ...[
+            Divider(color: colorScheme.outlineVariant, height: 24.h),
+            _buildSummaryRow('Method', _selectedPaymentMethod?.name ?? '-'),
+          ],
         ],
       ),
     );

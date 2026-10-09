@@ -108,7 +108,7 @@ class _VerificationStatusView extends StatelessWidget {
                     Text(
                       'ACCOUNT STATUS',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 10.s,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -127,7 +127,7 @@ class _VerificationStatusView extends StatelessWidget {
                     Text(
                       'Your identity documents are fully approved. You have full access to all trading features.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12.s,
                         height: 1.4,
                       ),
@@ -139,7 +139,7 @@ class _VerificationStatusView extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(12.s),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.verified_user_outlined, color: Colors.white, size: 28.s),
@@ -153,7 +153,7 @@ class _VerificationStatusView extends StatelessWidget {
               Text(
                 'VERIFICATION PROGRESS',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 10.s,
                   letterSpacing: 0.5,
                 ),

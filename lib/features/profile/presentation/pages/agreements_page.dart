@@ -32,7 +32,7 @@ class _AgreementsView extends StatefulWidget {
 }
 
 class _AgreementsViewState extends State<_AgreementsView> {
-  int _selectedTabIndex = 0;
+  final int _selectedTabIndex = 0;
 
   String _formatSize(int bytes) {
     if (bytes < 1024) return '$bytes B';

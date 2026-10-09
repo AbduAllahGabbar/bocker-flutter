@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
+import '../../../../features/auth/data/repository/user_access.dart';
 
 /// Dark navy color matching the UI design
 
@@ -79,6 +79,15 @@ class BottomNavBar extends StatelessWidget {
             onTap: () => onTap(2),
             activeColor: activeColor,
           ),
+          if (UserAccess.user?.isIb == true)
+            _NavItem(
+              icon: Icons.dashboard_outlined,
+              activeIcon: Icons.dashboard_rounded,
+              label: 'Dashboard'.tran,
+              isSelected: currentIndex == 3,
+              onTap: () => onTap(3),
+              activeColor: activeColor,
+            ),
         ],
       ),
     );

@@ -116,7 +116,7 @@ class DioFactory {
 
 class TokenRefreshInterceptor extends Interceptor {
   final Dio _dio;
-  bool _isRefreshing = false;
+  final bool _isRefreshing = false;
 
   TokenRefreshInterceptor(this._dio);
 

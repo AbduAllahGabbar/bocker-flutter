@@ -7,7 +7,7 @@ abstract class TransactionsRemoteDataSource {
   Future<List<TransactionModel>> getTransactions({String? type});
   Future<TransactionModel> addTransaction(Map<String, dynamic> data);
   Future<List<AccountModel>> getAccounts();
-  Future<List<PaymentMethodModel>> getPaymentMethods();
+  Future<List<PaymentMethodModel>> getPaymentMethods({required String type});
 }
 
 class TransactionsRemoteDataSourceImpl implements TransactionsRemoteDataSource {
@@ -65,9 +65,13 @@ class TransactionsRemoteDataSourceImpl implements TransactionsRemoteDataSource {
   }
 
   @override
-  Future<List<PaymentMethodModel>> getPaymentMethods() async {
+  Future<List<PaymentMethodModel>> getPaymentMethods({required String type}) async {
+    final endpoint = type == 'deposit' 
+        ? 'https://boker.egytag.com/api/paymentMethodList/admin'
+        : 'https://boker.egytag.com/api/paymentMethodList/user';
+
     final response = await dio.post(
-      'https://boker.egytag.com/api/paymentMethodList',
+      endpoint,
       data: {},
     );
 

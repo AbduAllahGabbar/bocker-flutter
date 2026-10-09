@@ -157,7 +157,7 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
                     padding: EdgeInsets.all(20.r),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerLowest,
-                      border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+                      border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Column(
@@ -200,7 +200,7 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
                             maxLines: 3,
                             decoration: InputDecoration(
                               hintText: 'Add a note for this recipient...',
-                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                               prefixIcon: Padding(
                                 padding: EdgeInsets.only(bottom: 40.h),
                                 child: Icon(Icons.notes, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -276,7 +276,7 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
         controller: controller,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
+          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
           prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
           border: InputBorder.none,
           filled: true,

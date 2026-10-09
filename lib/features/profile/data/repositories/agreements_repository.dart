@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:boker/core/network/dio/dio_factory.dart';
 import 'dart:convert';
 
 class AgreementsRepository {

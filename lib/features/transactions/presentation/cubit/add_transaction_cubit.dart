@@ -8,7 +8,7 @@ class AddTransactionCubit extends Cubit<AddTransactionState> {
   final TransactionsRepository repository;
 
   List<AccountModel> _accounts = [];
-  List<PaymentMethodModel> _paymentMethods = [];
+  final Map<String, List<PaymentMethodModel>> _paymentMethodsCache = {};
 
   AddTransactionCubit({required this.repository}) : super(AddTransactionInitial());
 
@@ -21,11 +21,20 @@ class AddTransactionCubit extends Cubit<AddTransactionState> {
     });
   }
 
-  Future<List<PaymentMethodModel>> getPaymentMethods() async {
-    if (_paymentMethods.isNotEmpty) return _paymentMethods;
-    final result = await repository.getPaymentMethods();
+  Future<List<PaymentMethodModel>> getPaymentMethods({required String type}) async {
+    // API uses 'withdraw' instead of 'withdrawal' internally, but the prompt says 
+    // endpoint is /api/paymentMethodList/user and it takes empty data. 
+    // Wait, the repository passes `type` to the data source which maps 'deposit' -> '/admin' and anything else -> '/user' (for withdrawal).
+    // Let's pass the raw type and let data source handle the endpoint.
+    final normalizedType = type.toLowerCase() == 'withdrawal' ? 'withdraw' : type.toLowerCase();
+    
+    if (_paymentMethodsCache.containsKey(normalizedType) && _paymentMethodsCache[normalizedType]!.isNotEmpty) {
+      return _paymentMethodsCache[normalizedType]!;
+    }
+    
+    final result = await repository.getPaymentMethods(type: normalizedType == 'withdraw' ? 'withdrawal' : 'deposit');
     return result.fold((l) => [], (r) {
-      _paymentMethods = r;
+      _paymentMethodsCache[normalizedType] = r;
       return r;
     });
   }
@@ -35,8 +44,8 @@ class AddTransactionCubit extends Cubit<AddTransactionState> {
     required double amount,
     required String accountId,
     required num accountIdNum,
-    required String paymentMethodCode,
-    required String paymentMethodName,
+    String? paymentMethodCode,
+    String? paymentMethodName,
     String? accountToId,
     num? accountToIdNum,
   }) async {
@@ -50,13 +59,16 @@ class AddTransactionCubit extends Cubit<AddTransactionState> {
         "_id": accountId,
         "id": accountIdNum,
       },
-      "paymentMethod": {
-        "code": paymentMethodCode,
-        "name": paymentMethodName,
-      },
       "amount": amount,
       "type": apiType,
     };
+    
+    if (paymentMethodCode != null && paymentMethodName != null) {
+      data["paymentMethod"] = {
+        "code": paymentMethodCode,
+        "name": paymentMethodName,
+      };
+    }
 
     if (apiType == 'transfer' && accountToId != null && accountToIdNum != null) {
       data["accountTo"] = {

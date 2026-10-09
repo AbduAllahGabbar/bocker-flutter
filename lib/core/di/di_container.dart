@@ -11,7 +11,6 @@ import '../../features/accounts/data/data_source/accounts_remote_data_source.dar
 import '../../features/accounts/data/repositories/accounts_repository.dart';
 import '../../features/accounts/presentation/cubit/accounts_cubit.dart';
 import '../../features/accounts/presentation/cubit/create_account_cubit.dart';
-import '../config/local/token_cache_service.dart';
 import '../network/dio/dio_factory.dart';
 import 'package:dio/dio.dart';
 import '../../features/transactions/data/data_source/transactions_remote_data_source.dart';
@@ -22,6 +21,13 @@ import '../../features/payment_methods/data/data_sources/payment_methods_remote_
 import '../../features/payment_methods/data/repositories/payment_methods_repository.dart';
 import '../../features/payment_methods/presentation/cubit/payment_methods_cubit.dart';
 import '../../features/payment_methods/presentation/cubit/add_payment_method_cubit.dart';
+import '../../features/mt5_data/data/data_source/mt5_remote_data_source.dart';
+import '../../features/mt5_data/data/repositories/mt5_repository.dart';
+import '../../features/mt5_data/presentation/cubit/mt5_data_cubit.dart';
+import '../../features/ib_dashboard/data/data_source/ib_remote_data_source.dart';
+import '../../features/ib_dashboard/data/repositories/ib_repository.dart';
+import '../../features/ib_dashboard/presentation/cubit/ib_dashboard_cubit.dart';
+import '../../features/ib_dashboard/presentation/cubit/ib_transactions_cubit.dart';
 
 final di = GetIt.instance;
 
@@ -177,5 +183,64 @@ class DI {
       );
     }
     return di<AddPaymentMethodCubit>();
+  }
+
+  static Mt5Repository initMt5Repository() {
+    if (!di.isRegistered<Mt5RemoteDataSource>()) {
+      di.registerFactory<Mt5RemoteDataSource>(
+        () => Mt5RemoteDataSourceImpl(dio: di<Dio>()),
+      );
+    }
+    if (!di.isRegistered<Mt5Repository>()) {
+      di.registerFactory<Mt5Repository>(
+        () => Mt5RepositoryImpl(remoteDataSource: di<Mt5RemoteDataSource>()),
+      );
+    }
+    return di<Mt5Repository>();
+  }
+
+  static Mt5DataCubit initMt5Data() {
+    if (!di.isRegistered<Mt5DataCubit>()) {
+      di.registerFactory<Mt5DataCubit>(
+       () => Mt5DataCubit(
+         accountsRepository: initAccountsRepository(),
+         mt5Repository: initMt5Repository(),
+       ),
+      );
+    }
+    return di<Mt5DataCubit>();
+  }
+
+  static IbRepository initIbRepository() {
+    if (!di.isRegistered<IbRemoteDataSource>()) {
+      di.registerFactory<IbRemoteDataSource>(
+        () => IbRemoteDataSourceImpl(dio: di<Dio>()),
+      );
+    }
+    if (!di.isRegistered<IbRepository>()) {
+      di.registerFactory<IbRepository>(
+        () => IbRepositoryImpl(remoteDataSource: di<IbRemoteDataSource>()),
+      );
+    }
+    return di<IbRepository>();
+  }
+
+  static IbDashboardCubit initIbDashboardCubit() {
+    if (!di.isRegistered<IbDashboardCubit>()) {
+      di.registerFactory<IbDashboardCubit>(
+        () => IbDashboardCubit(
+          repository: initIbRepository(),
+          authCubit: di<AuthCubit>(),
+        ),
+      );
+    }
+    return di<IbDashboardCubit>();
+  }
+
+  static IbTransactionsCubit initIbTransactionsCubit(String typeCode) {
+    return IbTransactionsCubit(
+      repository: initIbRepository(),
+      typeCode: typeCode,
+    );
   }
 }

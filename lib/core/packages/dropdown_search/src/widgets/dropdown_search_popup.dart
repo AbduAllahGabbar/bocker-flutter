@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../dropdown_search.dart';
 import '../utils.dart';
@@ -87,17 +88,17 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
       () => _manageLoadItems(searchBoxController.text, isFirstLoad: true),
     );
 
-    WidgetsBinding.instance.endOfFrame.then(
-      (_) {
-        if (mounted) widget.props.onDisplayed?.call();
-      },
-    );
+    WidgetsBinding.instance.endOfFrame.then((_) {
+      if (mounted) widget.props.onDisplayed?.call();
+    });
   }
 
   @override
   void didUpdateWidget(covariant DropdownSearchPopup<T> oldWidget) {
     if (!listEquals(
-        oldWidget.defaultSelectedItems, widget.defaultSelectedItems)) {
+      oldWidget.defaultSelectedItems,
+      widget.defaultSelectedItems,
+    )) {
       _selectedItemsNotifier.value = widget.defaultSelectedItems;
     }
     super.didUpdateWidget(oldWidget);
@@ -137,46 +138,49 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
     return Material(
       type: MaterialType.transparency,
       child: ValueListenableBuilder(
-          valueListenable: _selectedItemsNotifier,
-          builder: (ctx, value, w) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (widget.props.title != null) widget.props.title!,
-                if (widget.props.showSearchBox &&
-                    widget.dropdownMode != PopupMode.autocomplete)
-                  _searchField(),
-                _suggestedItemsWidget(),
-                Flexible(
-                  fit: widget.props.fit,
-                  child: Stack(
-                    children: <Widget>[
-                      StreamBuilder<List<T>>(
-                        stream: _itemsStream.stream,
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            if (_cachedItems.isNotEmpty &&
-                                !isInfiniteScrollEnded) {
-                              return _listItemWidget(
-                                  _cachedItems, snapshot.error);
-                            }
-                            return _errorWidget(snapshot.error);
-                          } else if (snapshot.hasData) {
-                            if (snapshot.data!.isEmpty) return _noDataWidget();
-                            return _listItemWidget(snapshot.data!);
+        valueListenable: _selectedItemsNotifier,
+        builder: (ctx, value, w) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (widget.props.title != null) widget.props.title!,
+              if (widget.props.showSearchBox &&
+                  widget.dropdownMode != PopupMode.autocomplete)
+                _searchField(),
+              _suggestedItemsWidget(),
+              Flexible(
+                fit: widget.props.fit,
+                child: Stack(
+                  children: <Widget>[
+                    StreamBuilder<List<T>>(
+                      stream: _itemsStream.stream,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          if (_cachedItems.isNotEmpty &&
+                              !isInfiniteScrollEnded) {
+                            return _listItemWidget(
+                              _cachedItems,
+                              snapshot.error,
+                            );
                           }
-                          return _loadingWidget();
-                        },
-                      ),
-                      _loadingWidget()
-                    ],
-                  ),
+                          return _errorWidget(snapshot.error);
+                        } else if (snapshot.hasData) {
+                          if (snapshot.data!.isEmpty) return _noDataWidget();
+                          return _listItemWidget(snapshot.data!);
+                        }
+                        return _loadingWidget();
+                      },
+                    ),
+                    _loadingWidget(),
+                  ],
                 ),
-                _multiSelectionValidation(),
-              ],
-            );
-          }),
+              ),
+              _multiSelectionValidation(),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -187,7 +191,8 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
       thumbVisibility: widget.props.scrollbarProps.thumbVisibility,
       trackVisibility: widget.props.scrollbarProps.trackVisibility,
       thickness: widget.props.scrollbarProps.thickness,
-      radius: widget.props.scrollbarProps.radius ??
+      radius:
+          widget.props.scrollbarProps.radius ??
           (widget.uiMode == UiToApply.cupertino ? Radius.circular(4) : null),
       notificationPredicate: widget.props.scrollbarProps.notificationPredicate,
       interactive: widget.props.scrollbarProps.interactive,
@@ -211,6 +216,9 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
           type: MaterialType.transparency,
           //todo temp solution till fix this Flutter issue here https://github.com/flutter/flutter/issues/155198
           child: ListView.builder(
+            scrollCacheExtent: ScrollCacheExtent.pixels(
+              widget.props.listViewProps.cacheExtent??0,
+            ),
             hitTestBehavior: widget.props.listViewProps.hitTestBehavior,
             controller:
                 widget.props.listViewProps.controller ?? scrollController,
@@ -226,7 +234,6 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
             addRepaintBoundaries:
                 widget.props.listViewProps.addRepaintBoundaries,
             addSemanticIndexes: widget.props.listViewProps.addSemanticIndexes,
-            cacheExtent: widget.props.listViewProps.cacheExtent,
             semanticChildCount: widget.props.listViewProps.semanticChildCount,
             dragStartBehavior: widget.props.listViewProps.dragStartBehavior,
             keyboardDismissBehavior:
@@ -248,8 +255,11 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
               if (pLoadingMoreError != null) {
                 return _loadMoreErrorWidget(pLoadingMoreError, itemCount);
               } else if (!isInfiniteScrollEnded) {
-                _manageLoadMoreItems(searchBoxController.text,
-                    skip: itemCount, showLoading: false);
+                _manageLoadMoreItems(
+                  searchBoxController.text,
+                  skip: itemCount,
+                  showLoading: false,
+                );
                 return _infiniteScrollLoadingMoreWidget(itemCount);
               }
 
@@ -280,10 +290,12 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
           IconButton(
             onPressed: () =>
                 loadMoreItems(searchBoxController.text, loadedItems),
-            icon: Icon(widget.uiMode == UiToApply.cupertino
-                ? CupertinoIcons.refresh
-                : Icons.refresh),
-          )
+            icon: Icon(
+              widget.uiMode == UiToApply.cupertino
+                  ? CupertinoIcons.refresh
+                  : Icons.refresh,
+            ),
+          ),
         ],
       ),
     );
@@ -292,7 +304,9 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
   Widget _infiniteScrollLoadingMoreWidget(int loadedItems) {
     if (widget.props.infiniteScrollProps?.loadingMoreBuilder != null) {
       return widget.props.infiniteScrollProps!.loadingMoreBuilder!(
-          context, loadedItems);
+        context,
+        loadedItems,
+      );
     }
 
     return Center(
@@ -326,12 +340,9 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
       alignment: Alignment.centerRight,
       padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
-          border:
-              Border(top: BorderSide(width: 1, color: Colors.grey.shade300))),
-      child: TextButton(
-        onPressed: onValidate,
-        child: Text("DONE"),
+        border: Border(top: BorderSide(width: 1, color: Colors.grey.shade300)),
       ),
+      child: TextButton(onPressed: onValidate, child: Text("DONE")),
     );
 
     return defaultMaterialValidation;
@@ -352,7 +363,10 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
   Widget _errorWidget(dynamic error) {
     if (widget.props.errorBuilder != null) {
       return widget.props.errorBuilder!(
-          context, searchBoxController.text, error);
+        context,
+        searchBoxController.text,
+        error,
+      );
     }
 
     return Container(
@@ -364,10 +378,12 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
           Text(error?.toString() ?? 'Unknown Error'),
           IconButton(
             onPressed: () => reloadItems(searchBoxController.text),
-            icon: Icon(widget.uiMode == UiToApply.cupertino
-                ? CupertinoIcons.refresh
-                : Icons.refresh),
-          )
+            icon: Icon(
+              widget.uiMode == UiToApply.cupertino
+                  ? CupertinoIcons.refresh
+                  : Icons.refresh,
+            ),
+          ),
         ],
       ),
     );
@@ -403,9 +419,9 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
       if (widget.filterFn != null) {
         return (widget.filterFn!(i, filter));
       } else if (widget.itemAsString != null) {
-        return (widget.itemAsString!(i))
-            .toLowerCase()
-            .contains(filter.toLowerCase());
+        return (widget.itemAsString!(
+          i,
+        )).toLowerCase().contains(filter.toLowerCase());
       }
       return i.toString().toLowerCase().contains(filter.toLowerCase());
     }).toList();
@@ -444,8 +460,10 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
     }
 
     try {
-      final List<T> myItems =
-          await widget.items!(filter, loadProps?.copy(skip: skip));
+      final List<T> myItems = await widget.items!(
+        filter,
+        loadProps?.copy(skip: skip),
+      );
 
       if (loadProps != null) {
         isInfiniteScrollEnded = myItems.length < loadProps.take;
@@ -509,8 +527,9 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
       return ListTile(
         enabled: !isDisabled,
         title: Text(_itemAsString(item)),
-        selected:
-            !widget.props.showSelectedItems ? false : _isSelectedItem(item),
+        selected: !widget.props.showSelectedItems
+            ? false
+            : _isSelectedItem(item),
         onTap: isDisabled ? null : () => _handleSelectedItem(item),
       );
     }
@@ -580,13 +599,12 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
 
     if (widget.props.searchFieldProps.containerBuilder != null) {
       return widget.props.searchFieldProps.containerBuilder!(
-          context, textField);
+        context,
+        textField,
+      );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: textField,
-    );
+    return Padding(padding: const EdgeInsets.all(8.0), child: textField);
   }
 
   Widget _suggestedItemsWidget() {
@@ -662,7 +680,7 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
   void selectItems(List<T> itemsToSelect) {
     for (var i in itemsToSelect) {
       if (!_isSelectedItem(i) /*check if the item is already selected*/ &&
-          !_isDisabled(i) /*escape disabled items*/) {
+          !_isDisabled(i) /*escape disabled items*/ ) {
         _selectedItems.add(i);
         if (widget.props.onItemAdded != null) {
           widget.props.onItemAdded!(_selectedItems, i);

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/config/routes/routes_manager.dart';
-import '../../../../core/di/di_container.dart';
 import '../cubit/accounts_cubit.dart';
 import '../cubit/accounts_state.dart';
 import '../widgets/account_card.dart';

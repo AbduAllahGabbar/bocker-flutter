@@ -15,8 +15,29 @@ class AuthRouter {
     },
     routes: [
       GoRoute(
+        path: "/login",
+        redirect: (context, state) {
+          final query = state.uri.query;
+          final ref = state.uri.queryParameters['ref'];
+          final accGroupId = state.uri.queryParameters['accGroupId'];
+          if (ref != null || accGroupId != null) {
+            return '/${RoutesNames.signUp}?$query';
+          }
+          return '/${RoutesNames.signIn}?$query';
+        },
+      ),
+      GoRoute(
         path: "/${RoutesNames.signIn}",
         name: RoutesNames.signIn,
+        redirect: (context, state) {
+          final ref = state.uri.queryParameters['ref'];
+          final accGroupId = state.uri.queryParameters['accGroupId'];
+          if (ref != null || accGroupId != null) {
+            final query = state.uri.query;
+            return '/${RoutesNames.signUp}?$query';
+          }
+          return null;
+        },
         pageBuilder: (context, state) {
           final callback =state.uri.queryParameters['callback'];
           final back =bool.tryParse(state.uri.queryParameters['back'].toString());
@@ -34,10 +55,12 @@ class AuthRouter {
         path: "/${RoutesNames.signUp}",
         name: RoutesNames.signUp,
         pageBuilder: (context, state) {
+          final ref = state.uri.queryParameters['ref'];
+          final accGroupId = state.uri.queryParameters['accGroupId'];
           return TransitionPage.buildPageWithDefaultTransition(
             context: context,
             state: state,
-            child: const SignUpPage(),
+            child: SignUpPage(refParam: ref, accGroupIdParam: accGroupId),
           );
         },
       ),

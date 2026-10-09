@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:boker/core/network/dio/dio_factory.dart';
 import 'dart:convert';
 
-import '../../../../core/di/di_container.dart';
 
 class TicketsRepository {
   final Dio dio;

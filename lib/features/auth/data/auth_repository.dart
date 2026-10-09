@@ -68,6 +68,8 @@ abstract class AuthRepository {
   });
 
   Future<Either<Failure, bool>> updateIsIb();
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getMt5Groups();
 }
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -223,5 +225,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, bool>> updateIsIb() async {
     return await _remoteDataSource.updateIsIb();
+  }
+
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>> getMt5Groups() async {
+    return await _remoteDataSource.getMt5Groups();
   }
 }

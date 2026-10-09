@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
-import '../../../../core/config/routes/routes_manager.dart';
 
 class AboutAppPage extends StatelessWidget {
   const AboutAppPage({super.key});

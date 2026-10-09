@@ -1,4 +1,3 @@
-import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../models/transaction_model.dart';
 import '../../../../features/accounts/data/models/account_model.dart';
@@ -9,7 +8,7 @@ abstract class TransactionsRepository {
   Future<Either<Failure, List<TransactionModel>>> getTransactions({String? type});
   Future<Either<Failure, TransactionModel>> addTransaction(Map<String, dynamic> data);
   Future<Either<Failure, List<AccountModel>>> getAccounts();
-  Future<Either<Failure, List<PaymentMethodModel>>> getPaymentMethods();
+  Future<Either<Failure, List<PaymentMethodModel>>> getPaymentMethods({required String type});
 }
 
 class TransactionsRepositoryImpl implements TransactionsRepository {
@@ -48,9 +47,9 @@ class TransactionsRepositoryImpl implements TransactionsRepository {
   }
 
   @override
-  Future<Either<Failure, List<PaymentMethodModel>>> getPaymentMethods() async {
+  Future<Either<Failure, List<PaymentMethodModel>>> getPaymentMethods({required String type}) async {
     try {
-      final methods = await remoteDataSource.getPaymentMethods();
+      final methods = await remoteDataSource.getPaymentMethods(type: type);
       return Right(methods);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));

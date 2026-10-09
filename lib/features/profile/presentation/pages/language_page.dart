@@ -10,7 +10,6 @@ import 'package:boker/features/app/app_cubit.dart';
 import '../../../../core/componants/my_elevated_button.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/di/di_container.dart';
-import '../../../../core/helpers/restart_widget.dart';
 
 class LanguagePage extends StatefulWidget {
   const LanguagePage({super.key});

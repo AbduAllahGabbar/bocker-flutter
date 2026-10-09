@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/failure.dart';
 import '../models/account_model.dart';
 import '../models/create_account_models.dart';
-import 'package:dartz/dartz.dart';
 
 abstract class AccountsRemoteDataSource {
   Future<Either<Failure, List<AccountModel>>> getAccounts();

@@ -11,7 +11,6 @@ class CustomWrap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      children: children,
       clipBehavior: props.clipBehavior,
       verticalDirection: props.verticalDirection,
       direction: props.direction,
@@ -21,6 +20,7 @@ class CustomWrap extends StatelessWidget {
       textDirection: props.textDirection,
       crossAxisAlignment: props.crossAxisAlignment,
       runAlignment: props.runAlignment,
+      children: children,
     );
   }
 }

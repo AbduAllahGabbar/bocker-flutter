@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:res_reline/my_responsive.dart';
-import 'package:boker/core/utils/constants/app_constants.dart';
 
 class MyTextFormField extends StatelessWidget {
   const MyTextFormField({
