@@ -64,7 +64,8 @@ class _MyTabBarWidgetState extends State<MyTabBarWidget>
         animationDuration: const Duration(milliseconds: 300),
       );
     }
-    if (widget.selectedIndex != oldWidget.selectedIndex && widget.selectedIndex != null) {
+    if (widget.selectedIndex != oldWidget.selectedIndex &&
+        widget.selectedIndex != null) {
       _tabController.animateTo(widget.selectedIndex!);
     }
     super.didUpdateWidget(oldWidget);
@@ -93,12 +94,22 @@ class _MyTabBarWidgetState extends State<MyTabBarWidget>
             indicatorWeight: widget.indicatorWeight,
             controller: _tabController,
             tabAlignment: TabAlignment.start,
-            padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            indicatorColor: widget.selectedIndex == null ? Colors.transparent : (widget.indicator != null ? Colors.transparent : theme.primaryColor),
-            indicator: widget.selectedIndex == null ? const BoxDecoration(color: Colors.transparent) : widget.indicator,
+            padding:
+                widget.padding ??
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            indicatorColor: widget.selectedIndex == null
+                ? Colors.transparent
+                : (widget.indicator != null
+                      ? Colors.transparent
+                      : theme.primaryColor),
+            indicator: widget.selectedIndex == null
+                ? const BoxDecoration(color: Colors.transparent)
+                : widget.indicator,
             indicatorSize: widget.indicatorSize,
             labelColor: widget.labelColor ?? theme.textTheme.labelMedium?.color,
-            unselectedLabelColor: widget.unselectedLabelColor ?? theme.textTheme.labelMedium?.color,
+            unselectedLabelColor:
+                widget.unselectedLabelColor ??
+                theme.textTheme.labelMedium?.color,
             labelStyle: widget.labelStyle ?? theme.textTheme.labelMedium,
             labelPadding: widget.labelPadding,
             tabs: widget.tabs,

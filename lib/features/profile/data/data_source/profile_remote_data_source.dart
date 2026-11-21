@@ -14,12 +14,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   @override
   Future<Either<Failure, UserModel>> fetchUserView(String userId) async {
     try {
-
-
-      final response = await _dio.post(
-        '/user/view',
-        data: {'id': userId},
-      );
+      final response = await _dio.post('/user/view', data: {'id': userId});
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;

@@ -11,7 +11,7 @@ class AuthRouter {
   static final authShellRoute = ShellRoute(
     redirect: RouterChecker.ifAlreadyLogin,
     builder: (context, state, child) {
-      return  child;
+      return child;
     },
     routes: [
       GoRoute(
@@ -39,15 +39,14 @@ class AuthRouter {
           return null;
         },
         pageBuilder: (context, state) {
-          final callback =state.uri.queryParameters['callback'];
-          final back =bool.tryParse(state.uri.queryParameters['back'].toString());
+          final callback = state.uri.queryParameters['callback'];
+          final back = bool.tryParse(
+            state.uri.queryParameters['back'].toString(),
+          );
           return TransitionPage.buildPageWithDefaultTransition(
             context: context,
             state: state,
-            child: SignInPage(
-              back: back,
-              callback: callback,
-            ),
+            child: SignInPage(back: back, callback: callback),
           );
         },
       ),

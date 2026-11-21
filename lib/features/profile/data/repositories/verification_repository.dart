@@ -9,19 +9,19 @@ class VerificationRepository {
 
   VerificationRepository(this.dio);
 
-  Future<VerificationDocumentModel> fetchVerificationStatus(dynamic userId) async {
+  Future<VerificationDocumentModel> fetchVerificationStatus(
+    dynamic userId,
+  ) async {
     try {
-
-      
       final response = await dio.post(
         '/manageUsers/view',
-        data: {
-          "id": userId,
-        },
+        data: {"id": userId},
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data is String ? json.decode(response.data) : response.data;
+        final data = response.data is String
+            ? json.decode(response.data)
+            : response.data;
         if (data['done'] == true && data['doc'] != null) {
           return VerificationDocumentModel.fromJson(data);
         }
@@ -32,18 +32,15 @@ class VerificationRepository {
     }
   }
 
-  Future<Map<String, dynamic>> updateOneUserForm(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateOneUserForm(
+    Map<String, dynamic> data,
+  ) async {
     try {
-
-      
-      final response = await dio.post(
-        '/user/updateOneUserForm',
-        data: data,
-      );
+      final response = await dio.post('/user/updateOneUserForm', data: data);
 
       if (response.statusCode == 200 && response.data != null) {
         if (response.data is String) {
-           return json.decode(response.data);
+          return json.decode(response.data);
         }
         return response.data as Map<String, dynamic>;
       }
@@ -53,11 +50,15 @@ class VerificationRepository {
     }
   }
 
-  Future<Either<Failure, Map<String, dynamic>>> uploadImage(String imagePath) async {
+  Future<Either<Failure, Map<String, dynamic>>> uploadImage(
+    String imagePath,
+  ) async {
     return UploadFilesServices.uploadImage(imagePath);
   }
 
-  Future<Either<Failure, Map<String, dynamic>>> uploadFile(String filePath) async {
+  Future<Either<Failure, Map<String, dynamic>>> uploadFile(
+    String filePath,
+  ) async {
     return UploadFilesServices.uploadFile(filePath);
   }
 }

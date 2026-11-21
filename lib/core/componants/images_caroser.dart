@@ -1,6 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class ImagesCarousel extends StatefulWidget {

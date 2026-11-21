@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
+import '../../../../core/di/di_container.dart';
 import '../../../../features/auth/data/repository/user_access.dart';
+import '../../../../features/notifications/data/models/notification_model.dart';
+import '../../../../features/notifications/presentation/cubit/notification_counters_cubit.dart';
 
 /// Dark navy color matching the UI design
 
@@ -71,13 +75,20 @@ class BottomNavBar extends StatelessWidget {
             activeColor: activeColor,
           ),
 
-          _NavItem(
-            icon: Icons.person_outline_rounded,
-            activeIcon: Icons.person_rounded,
-            label: 'My Account'.tran,
-            isSelected: currentIndex == 2,
-            onTap: () => onTap(2),
-            activeColor: activeColor,
+          // Unread support messages live under My Account, so the tab carries
+          // their badge. The count comes from the same counters cubit the
+          // bell and the drawer use - no extra stream, no second counter.
+          BlocBuilder<NotificationCountersCubit, NotificationSummary>(
+            bloc: DI.initNotificationCounters(),
+            builder: (context, summary) => _NavItem(
+              icon: Icons.person_outline_rounded,
+              activeIcon: Icons.person_rounded,
+              label: 'My Account'.tran,
+              isSelected: currentIndex == 2,
+              onTap: () => onTap(2),
+              activeColor: activeColor,
+              badgeCount: summary.unreadMessages,
+            ),
           ),
           if (UserAccess.user?.isIb == true)
             _NavItem(
@@ -102,6 +113,9 @@ class _NavItem extends StatelessWidget {
   final VoidCallback onTap;
   final Color activeColor;
 
+  /// Unread items shown as a badge over the icon; 0 hides it.
+  final int badgeCount;
+
   const _NavItem({
     required this.icon,
     required this.activeIcon,
@@ -109,6 +123,7 @@ class _NavItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.activeColor,
+    this.badgeCount = 0,
   });
 
   @override
@@ -125,16 +140,27 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                isSelected ? activeIcon : icon,
-                key: ValueKey(isSelected),
-                color: isSelected ? activeColor : inActiveColor,
-                size: 24.h,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+                  child: Icon(
+                    isSelected ? activeIcon : icon,
+                    key: ValueKey(isSelected),
+                    color: isSelected ? activeColor : inActiveColor,
+                    size: 24.h,
+                  ),
+                ),
+                if (badgeCount > 0)
+                  PositionedDirectional(
+                    top: -4,
+                    end: -6,
+                    child: _NavBadge(count: badgeCount),
+                  ),
+              ],
             ),
             SizedBox(height: 4.h),
             AnimatedDefaultTextStyle(
@@ -158,63 +184,42 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _CartNavItem extends StatelessWidget {
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Color activeColor;
+/// The small red counter drawn over a nav icon.
+class _NavBadge extends StatelessWidget {
+  const _NavBadge({required this.count});
 
-  const _CartNavItem({
-    required this.isSelected,
-    required this.onTap,
-    required this.activeColor,
-  });
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inActiveColor = isDark
-        ? const Color(0xff14265C)
-        : const Color(0xff22409A);
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 64.h,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                isSelected
-                    ? Icons.shopping_cart_rounded
-                    : Icons.shopping_cart_outlined,
-                key: ValueKey(isSelected),
-                color: isSelected ? activeColor : inActiveColor,
-                size: 24.h,
-              ),
-            ),
-            SizedBox(height: 4.h),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                color: isSelected ? activeColor : inActiveColor,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                fontSize: 10.h,
-              ),
-              child: Text(
-                'Cart'.tran,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
+    final colorScheme = Theme.of(context).colorScheme;
+    final isWide = count > 9;
+    final label = count > 99 ? '99+' : '$count';
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: isWide ? 4.r : 0),
+      constraints: BoxConstraints(minWidth: 16.r),
+      height: 16.r,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: colorScheme.error,
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E1E1E)
+              : Colors.white,
+          width: 1.5,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: colorScheme.onError,
+          fontSize: 9.s,
+          fontWeight: FontWeight.w800,
+          height: 1,
         ),
       ),
     );
-
   }
 }

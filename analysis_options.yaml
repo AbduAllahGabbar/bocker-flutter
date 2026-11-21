@@ -10,6 +10,13 @@
 analyzer:
   exclude:
     - build/**
+    # Vendored third-party sources. They are kept verbatim so they can be
+    # re-synced with upstream; their lints are not this project's to fix.
+    - lib/core/packages/dropdown_search/**
+    - lib/core/packages/res_reline/**
+    # Generated code.
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
     - android/**
     - ios/**
     - web/**

@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:boker/core/data/constants/apis_constants.dart';
-import 'package:boker/core/config/local/token_cache_service.dart';
+import 'package:boker/core/network/dio/session_manager.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/services/upload_files_services/upload_files_services.dart';
 import '../models/user_model.dart';
@@ -107,7 +107,6 @@ abstract class AuthRemoteDataSource {
 
   Future<Either<Failure, UserModel>> getCurrentUser({String? token});
 
-
   Future<Either<Failure, bool>> updatePasswordProfile({
     required String oldPassword,
     required String newPassword,
@@ -141,12 +140,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (token == null || token.isEmpty) {
       return null;
     }
-    CacheSecureStorage.saveTokens(accessToken: token);
+    await SessionManager.instance.saveToken(token);
     return token;
   }
 
   String? _extractToken(Map data) {
-    final rootToken = data['accessToken'] ?? data['token'];
+    final rootToken =
+        data['accessToken'] ?? data['access_token'] ?? data['token'];
     if (rootToken is String && rootToken.isNotEmpty) {
       return rootToken;
     }
@@ -181,7 +181,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/user/login',
+        ApiConstants.login,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {"email": emailOrPhone, "password": password},
       );
@@ -196,7 +196,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
             errorField.toString().isNotEmpty) {
           final conflictToken = data['accessToken'] as String?;
           await signOut(accessToken: conflictToken);
-          return _doSignIn(
+          return await _doSignIn(
             emailOrPhone: emailOrPhone,
             password: password,
             isRetry: true,
@@ -229,6 +229,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }
 
         if (data['user'] != null) {
+          // The session has to be live before the app enters the authenticated
+          // area - the token arrives either in this body or in the response's
+          // `Set-Cookie` header (captured by AuthInterceptor). If neither
+          // carried one, say so instead of landing on a screen whose every
+          // request answers 401.
+          if (!SessionManager.instance.hasSession) {
+            return Failure.server(
+              'Signed in, but the server did not return a session. Please try again.',
+            ).left();
+          }
+
           final userJson = data['user'] as Map<String, dynamic>;
           final user = UserModel.fromJson(userJson);
           return Right(EmailLoginResult.authenticated(user));
@@ -255,12 +266,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/user/register',
+        ApiConstants.register,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: data,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Registration can already hand back a session. Persist it so the
+        // screens that follow are authenticated without a restart.
+        await _saveAuthTokenFromResponse(response.data);
         final registerResponse = RegisterResponse.fromJson(response.data);
         return Right(registerResponse);
       } else {
@@ -282,12 +296,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/user/verifyEmailOtp',
+        ApiConstants.verifyEmailOtp,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {"email": email, "otp": otp},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Verifying the e-mail OTP is the step that activates the account, so
+        // this is the other response that can carry a fresh session.
+        await _saveAuthTokenFromResponse(response.data);
         return const Right("Success");
       } else {
         return Failure.server(
@@ -324,7 +341,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/manageUsers/updateUserForm',
+        ApiConstants.updateUserForm,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {
           "email": email,
@@ -337,6 +354,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['done'] == true) {
+        await _saveAuthTokenFromResponse(response.data);
         return const Right(true);
       }
       return Left(
@@ -351,36 +369,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
+  /// Phone/SMS authentication is NOT supported by this backend.
+  ///
+  /// Verified against the live API: `/store/auth/phone/request-otp`,
+  /// `/auth/phone/request-otp`, `/user/sendOtp` and `/user/verify-phone-otp`
+  /// all return HTTP 404. No endpoint is invented here - the caller gets an
+  /// explicit failure and the phone login entry point is hidden in the UI.
   @override
   Future<Either<Failure, String>> requestPhoneLoginOtp({
     required String phone,
   }) async {
-    try {
-      final response = await _dio.post(
-        '/store/auth/phone/request-otp',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        ),
-        data: {"phone": phone},
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final message =
-            response.data['message'] as String? ?? 'OTP sent successfully';
-        return Right(message);
-      } else {
-        return Failure.server(
-          response.data['error'] ?? 'Failed to send OTP',
-        ).left();
-      }
-    } on DioException catch (e) {
-      return Failure.server(_handleDioError(e)).left();
-    } catch (e) {
-      return Failure.internal(e.toString()).left();
-    }
+    return Failure.server(_phoneAuthUnsupportedMessage).left();
   }
 
   @override
@@ -389,7 +388,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/otpMails/add',
+        ApiConstants.otpMailsAdd,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {'email': email},
       );
@@ -415,7 +414,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/user/updatePasswordWithOtp',
+        ApiConstants.updatePasswordWithOtp,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {'email': email, 'otp': otp, 'password': password},
       );
@@ -442,28 +441,28 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, void>> signOut({String? accessToken}) async {
     try {
-      final token = accessToken ?? await CacheSecureStorage.getAccessToken();
+      final token = accessToken ?? await SessionManager.instance.readToken();
 
       final response = await _dio.delete(
         ApiConstants.signOut,
         options: Options(headers: {'access_token': ?token}),
       );
 
-      if (response.statusCode == 200) {
-        await CacheSecureStorage.clearTokens();
-      } else {
-        await CacheSecureStorage.clearTokens();
+      // The local session is dropped either way: a failed logout call must
+      // never leave an unusable token behind on the device.
+      await SessionManager.instance.clear();
 
+      if (response.statusCode != 200) {
         return Failure.server(
           response.statusMessage ?? 'Failed to sign out',
         ).left();
       }
       return const Right(null);
     } on DioException catch (e) {
-      await CacheSecureStorage.clearTokens();
+      await SessionManager.instance.clear();
       return Failure.server(_handleDioError(e)).left();
     } catch (e) {
-      await CacheSecureStorage.clearTokens();
+      await SessionManager.instance.clear();
       return Failure.internal(e.toString()).left();
     }
   }
@@ -471,7 +470,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, void>> deleteAccount() async {
     try {
-      final token = await CacheSecureStorage.getAccessToken();
+      final token = await SessionManager.instance.readToken();
       if (token == null) {
         return Failure.internal('Token not found').left();
       }
@@ -479,7 +478,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await _dio.delete(ApiConstants.account);
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        await CacheSecureStorage.clearTokens();
+        await SessionManager.instance.clear();
         return const Right(null);
       } else {
         return Failure.server('Failed to delete account').left();
@@ -494,18 +493,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, UserModel>> getCurrentUser({String? token}) async {
     try {
-      final currentToken = token ?? await CacheSecureStorage.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        await SessionManager.instance.saveToken(token);
+      }
+      final currentToken = await SessionManager.instance.readToken();
       if (currentToken == null) {
         return Left(Failure.internal('Token not found'));
       }
-      var response = await _dio.post(
-        '/user/view',
-        options: Options(
-          headers: {
-            'Cookie': 'access_token=$currentToken;access_token=$currentToken',
-          },
-        ),
-      );
+      // The session cookie is attached by AuthInterceptor for every request.
+      var response = await _dio.post(ApiConstants.userView);
 
       if (response.statusCode == 200) {
         final user = UserModel.fromJson(response.data['doc']);
@@ -518,7 +514,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-
   @override
   Future<Either<Failure, bool>> updatePasswordProfile({
     required String oldPassword,
@@ -527,7 +522,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '/user/update-password-profile',
+        ApiConstants.updatePasswordProfile,
         data: {
           'oldPassword': oldPassword,
           'newPassword': newPassword,
@@ -552,13 +547,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, bool>> updateIsIb() async {
     try {
-      final token = await CacheSecureStorage.getAccessToken();
+      final token = await SessionManager.instance.readToken();
       if (token == null) {
         return Left(Failure.internal('Token not found'));
       }
 
       final response = await _dio.post(
-        '/user/update-isIb',
+        ApiConstants.updateIsIb,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {},
       );
@@ -580,7 +575,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Either<Failure, List<Map<String, dynamic>>>> getMt5Groups() async {
     try {
-      final response = await _dio.post('/site-setting/mt5Groups-public', data: {});
+      final response = await _dio.post(ApiConstants.mt5GroupsPublic, data: {});
       if (response.statusCode == 200 && response.data['done'] == true) {
         final list = response.data['list'] as List;
         return Right(list.cast<Map<String, dynamic>>());
@@ -609,34 +604,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return 'Connection failed. Please check your internet.';
   }
 
+  /// Phone OTP resend - see [requestPhoneLoginOtp]: unsupported backend-side.
   @override
-  Future<Either<Failure, String>> resendOtp({required String customerId}) {
-    // TODO: implement resendOtp
-    throw UnimplementedError();
+  Future<Either<Failure, String>> resendOtp({
+    required String customerId,
+  }) async {
+    return Failure.server(_phoneAuthUnsupportedMessage).left();
   }
 
+  /// Password reset runs through the e-mail OTP flow
+  /// ([sendForgotPasswordOtp] + [updatePasswordWithOtp]); there is no
+  /// single-shot reset endpoint on this backend.
   @override
-  Future<Either<Failure, void>> resetPassword({required String identifier}) {
-    // TODO: implement resetPassword
-    throw UnimplementedError();
+  Future<Either<Failure, void>> resetPassword({
+    required String identifier,
+  }) async {
+    return sendForgotPasswordOtp(email: identifier);
   }
 
+  /// Phone OTP verification - see [requestPhoneLoginOtp].
   @override
   Future<Either<Failure, String>> verifyOtp({
     required String phone,
     required String customerId,
     required String otp,
-  }) {
-    // TODO: implement verifyOtp
-    throw UnimplementedError();
+  }) async {
+    return Failure.server(_phoneAuthUnsupportedMessage).left();
   }
 
+  /// Phone OTP login - see [requestPhoneLoginOtp].
   @override
   Future<Either<Failure, UserModel>> verifyPhoneLoginOtp({
     required String phone,
     required String otp,
-  }) {
-    // TODO: implement verifyPhoneLoginOtp
-    throw UnimplementedError();
+  }) async {
+    return Failure.server(_phoneAuthUnsupportedMessage).left();
   }
+
+  static const String _phoneAuthUnsupportedMessage =
+      'Phone verification is not available in the app yet. '
+      'Please sign in with your email and password.';
 }

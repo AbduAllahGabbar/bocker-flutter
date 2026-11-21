@@ -22,10 +22,13 @@ class Mt5RemoteDataSourceImpl implements Mt5RemoteDataSource {
     );
 
     if (response.statusCode == 200 && response.data != null) {
-      final data = response.data['doc'] ?? response.data['data'] ?? response.data;
+      final data =
+          response.data['doc'] ?? response.data['data'] ?? response.data;
       return Mt5SummaryModel.fromJson(data);
     } else {
-      throw response.data?['error'] ?? response.data?['message'] ?? 'Failed to fetch MT5 summary';
+      throw response.data?['error'] ??
+          response.data?['message'] ??
+          'Failed to fetch MT5 summary';
     }
   }
 
@@ -37,10 +40,13 @@ class Mt5RemoteDataSourceImpl implements Mt5RemoteDataSource {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> list = response.data['list'] ?? response.data['data'] ?? [];
+      final List<dynamic> list =
+          response.data['list'] ?? response.data['data'] ?? [];
       return list.map((e) => Mt5ItemModel.fromJson(e)).toList();
     } else {
-      throw response.data?['error'] ?? response.data?['message'] ?? 'Failed to fetch MT5 list';
+      throw response.data?['error'] ??
+          response.data?['message'] ??
+          'Failed to fetch MT5 list';
     }
   }
 
@@ -52,7 +58,9 @@ class Mt5RemoteDataSourceImpl implements Mt5RemoteDataSource {
     );
 
     if (response.statusCode != 200 || response.data['done'] == false) {
-      throw response.data?['error'] ?? response.data?['message'] ?? 'Failed to sync MT5 data';
+      throw response.data?['error'] ??
+          response.data?['message'] ??
+          'Failed to sync MT5 data';
     }
   }
 }

@@ -5,7 +5,7 @@ import '../../../../core/config/language/language_manager.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/config/routes/routes_manager.dart';
 import 'package:boker/features/profile/data/models/document_model.dart';
 import '../../../../core/di/di_container.dart';
@@ -21,9 +21,8 @@ class VerificationStatusPage extends StatelessWidget {
     return BlocProvider(
       create: (context) {
         final userId = UserAccess.user?.id;
-        return VerificationStatusCubit(VerificationRepository(
-         di<Dio>(),
-        ))..fetchVerificationStatus(userId);
+        return VerificationStatusCubit(VerificationRepository(di<Dio>()))
+          ..fetchVerificationStatus(userId);
       },
       child: const _VerificationStatusView(),
     );
@@ -41,7 +40,7 @@ class _VerificationStatusView extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon:  Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: context.pop,
         ),
         title: Text(
@@ -59,16 +58,25 @@ class _VerificationStatusView extends StatelessWidget {
           return state.when(
             initial: () => const Center(child: CircularProgressIndicator()),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (message) => Center(child: Text(message, style: TextStyle(color: Colors.red))),
+            error: (message) => Center(
+              child: Text(message, style: TextStyle(color: Colors.red)),
+            ),
             success: (identityForm, addressForm) {
               return RefreshIndicator(
                 onRefresh: () async {
                   final userId = UserAccess.user?.id;
-                  context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
+                  context
+                      .read<VerificationStatusCubit>()
+                      .fetchVerificationStatus(userId);
                 },
                 child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.s,
+                    vertical: 12.s,
+                  ),
                   children: [
                     _buildOverallStatusBanner(context),
                     SizedBox(height: 20.s),
@@ -77,7 +85,9 @@ class _VerificationStatusView extends StatelessWidget {
                     _buildAddressCard(context, addressForm),
                     SizedBox(height: 24.s),
                     _buildFooterInfo(context),
-                    SizedBox(height: MediaQuery.paddingOf(context).bottom + 16.s),
+                    SizedBox(
+                      height: MediaQuery.paddingOf(context).bottom + 16.s,
+                    ),
                   ],
                 ),
               );
@@ -142,7 +152,11 @@ class _VerificationStatusView extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.verified_user_outlined, color: Colors.white, size: 28.s),
+                child: Icon(
+                  Icons.verified_user_outlined,
+                  color: Colors.white,
+                  size: 28.s,
+                ),
               ),
             ],
           ),
@@ -201,7 +215,11 @@ class _VerificationStatusView extends StatelessWidget {
                   color: const Color(0xFFE9F2ED),
                   borderRadius: BorderRadius.circular(8.s),
                 ),
-                child: Icon(Icons.badge_outlined, color: Theme.of(context).primaryColor, size: 24.s),
+                child: Icon(
+                  Icons.badge_outlined,
+                  color: Theme.of(context).primaryColor,
+                  size: 24.s,
+                ),
               ),
               SizedBox(width: 12.s),
               Expanded(
@@ -218,7 +236,10 @@ class _VerificationStatusView extends StatelessWidget {
                     ),
                     Text(
                       'Last updated ${form.lastUpdateDate}',
-                      style: TextStyle(fontSize: 12.s, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12.s,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                   ],
                 ),
@@ -238,21 +259,35 @@ class _VerificationStatusView extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildInfoItem('DOCUMENT NUMBER', form.docNumber)),
+              Expanded(
+                child: _buildInfoItem('DOCUMENT NUMBER', form.docNumber),
+              ),
               Expanded(child: _buildInfoItem('ISSUING COUNTRY', form.country)),
             ],
           ),
           SizedBox(height: 20.s),
           Text(
             'ATTACHMENTS',
-            style: TextStyle(fontSize: 10.s, color: Colors.grey.shade500, letterSpacing: 0.5),
+            style: TextStyle(
+              fontSize: 10.s,
+              color: Colors.grey.shade500,
+              letterSpacing: 0.5,
+            ),
           ),
           SizedBox(height: 12.s),
           Row(
             children: [
-              _buildAttachmentBox(context, icon: Icons.image, label: 'Front side'),
+              _buildAttachmentBox(
+                context,
+                icon: Icons.image,
+                label: 'Front side',
+              ),
               SizedBox(width: 12.s),
-              _buildAttachmentBox(context, icon: Icons.picture_as_pdf, label: 'ID_SCAN_BACK.pdf'),
+              _buildAttachmentBox(
+                context,
+                icon: Icons.picture_as_pdf,
+                label: 'ID_SCAN_BACK.pdf',
+              ),
             ],
           ),
           SizedBox(height: 20.s),
@@ -260,21 +295,35 @@ class _VerificationStatusView extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () async {
-                final result = await context.pushNamed(RoutesNames.editIdentity, extra: form.originalJson);
+                final result = await context.pushNamed(
+                  RoutesNames.editIdentity,
+                  extra: form.originalJson,
+                );
                 if (result == true && context.mounted) {
                   final userId = UserAccess.user?.id;
-                  context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
+                  context
+                      .read<VerificationStatusCubit>()
+                      .fetchVerificationStatus(userId);
                 }
               },
-              icon: Icon(Icons.edit_outlined, size: 16.s, color: Colors.grey.shade600),
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 16.s,
+                color: Colors.grey.shade600,
+              ),
               label: Text(
                 'Edit Details',
-                style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               style: OutlinedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 12.s),
                 side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.s)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.s),
+                ),
               ),
             ),
           ),
@@ -302,7 +351,11 @@ class _VerificationStatusView extends StatelessWidget {
                   color: const Color(0xFFFFF7ED),
                   borderRadius: BorderRadius.circular(8.s),
                 ),
-                child: Icon(Icons.location_on_outlined, color: const Color(0xFFC2410C), size: 24.s),
+                child: Icon(
+                  Icons.location_on_outlined,
+                  color: const Color(0xFFC2410C),
+                  size: 24.s,
+                ),
               ),
               SizedBox(width: 12.s),
               Expanded(
@@ -319,7 +372,10 @@ class _VerificationStatusView extends StatelessWidget {
                     ),
                     Text(
                       'Last updated ${form.lastUpdateDate}',
-                      style: TextStyle(fontSize: 12.s, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12.s,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                   ],
                 ),
@@ -342,12 +398,20 @@ class _VerificationStatusView extends StatelessWidget {
           SizedBox(height: 20.s),
           Text(
             'ATTACHMENTS',
-            style: TextStyle(fontSize: 10.s, color: Colors.grey.shade500, letterSpacing: 0.5),
+            style: TextStyle(
+              fontSize: 10.s,
+              color: Colors.grey.shade500,
+              letterSpacing: 0.5,
+            ),
           ),
           SizedBox(height: 12.s),
           Row(
             children: [
-              _buildAttachmentBox(context, icon: Icons.description_outlined, label: 'Utility Bill'),
+              _buildAttachmentBox(
+                context,
+                icon: Icons.description_outlined,
+                label: 'Utility Bill',
+              ),
               SizedBox(width: 12.s),
               _buildAddAttachmentBox(),
             ],
@@ -357,21 +421,35 @@ class _VerificationStatusView extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () async {
-                final result = await context.pushNamed(RoutesNames.editAddress, extra: form.originalJson);
+                final result = await context.pushNamed(
+                  RoutesNames.editAddress,
+                  extra: form.originalJson,
+                );
                 if (result == true && context.mounted) {
                   final userId = UserAccess.user?.id;
-                  context.read<VerificationStatusCubit>().fetchVerificationStatus(userId);
+                  context
+                      .read<VerificationStatusCubit>()
+                      .fetchVerificationStatus(userId);
                 }
               },
-              icon: Icon(Icons.edit_outlined, size: 16.s, color: Theme.of(context).primaryColor),
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 16.s,
+                color: Theme.of(context).primaryColor,
+              ),
               label: Text(
                 'Edit Address',
-                style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               style: OutlinedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 12.s),
                 side: BorderSide(color: Theme.of(context).primaryColor),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.s)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.s),
+                ),
               ),
             ),
           ),
@@ -386,19 +464,29 @@ class _VerificationStatusView extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 10.s, color: Colors.grey.shade500, letterSpacing: 0.5),
+          style: TextStyle(
+            fontSize: 10.s,
+            color: Colors.grey.shade500,
+            letterSpacing: 0.5,
+          ),
         ),
         SizedBox(height: 4.s),
         Text(
           value,
-          style: TextStyle(fontSize: 13.s, color: const Color(0xFF1F2937), fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 13.s,
+            color: const Color(0xFF1F2937),
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildStatusBadge(BuildContext context, String status) {
-    final isVerified = status.toLowerCase() == 'verified' || status.toLowerCase() == 'approved';
+    final isVerified =
+        status.toLowerCase() == 'verified' ||
+        status.toLowerCase() == 'approved';
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.s, vertical: 4.s),
       decoration: BoxDecoration(
@@ -410,7 +498,9 @@ class _VerificationStatusView extends StatelessWidget {
           Icon(
             isVerified ? Icons.check_circle_outline : Icons.access_time,
             size: 12.s,
-            color: isVerified ? Theme.of(context).primaryColor : const Color(0xFF8B5014),
+            color: isVerified
+                ? Theme.of(context).primaryColor
+                : const Color(0xFF8B5014),
           ),
           SizedBox(width: 4.s),
           Text(
@@ -418,7 +508,9 @@ class _VerificationStatusView extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.s,
               fontWeight: FontWeight.bold,
-              color: isVerified ? Theme.of(context).primaryColor : const Color(0xFF8B5014),
+              color: isVerified
+                  ? Theme.of(context).primaryColor
+                  : const Color(0xFF8B5014),
             ),
           ),
         ],
@@ -426,7 +518,11 @@ class _VerificationStatusView extends StatelessWidget {
     );
   }
 
-  Widget _buildAttachmentBox(BuildContext context, {required IconData icon, required String label}) {
+  Widget _buildAttachmentBox(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
     return Expanded(
       child: Container(
         height: 70.s,
@@ -459,14 +555,24 @@ class _VerificationStatusView extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.grey.shade50,
           borderRadius: BorderRadius.circular(8.s),
-          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.none),
+          border: Border.all(
+            color: Colors.grey.shade300,
+            style: BorderStyle.none,
+          ),
         ),
         child: CustomPaint(
-          painter: _DottedBorderPainter(color: Colors.grey.shade400, radius: 8.s),
+          painter: _DottedBorderPainter(
+            color: Colors.grey.shade400,
+            radius: 8.s,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_circle_outline, color: Colors.grey.shade400, size: 20.s),
+              Icon(
+                Icons.add_circle_outline,
+                color: Colors.grey.shade400,
+                size: 20.s,
+              ),
               SizedBox(height: 6.s),
               Text(
                 'Add',
@@ -489,7 +595,11 @@ class _VerificationStatusView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Theme.of(context).primaryColor, size: 20.s),
+          Icon(
+            Icons.info_outline,
+            color: Theme.of(context).primaryColor,
+            size: 20.s,
+          ),
           SizedBox(width: 12.s),
           Expanded(
             child: Text(
@@ -521,7 +631,12 @@ class _DottedBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), Radius.circular(radius)));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Radius.circular(radius),
+        ),
+      );
 
     // A simple dashed path effect (could use path_drawing package for better dashed lines, but doing a manual approximate here or just drawing a solid light line)
     // For simplicity, we just draw solid here since standard flutter doesn't have dashed path built-in without packages.

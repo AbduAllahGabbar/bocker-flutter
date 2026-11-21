@@ -1,4 +1,3 @@
-
 import '../../data/models/user_payment_method_model.dart';
 
 abstract class PaymentMethodsState {}

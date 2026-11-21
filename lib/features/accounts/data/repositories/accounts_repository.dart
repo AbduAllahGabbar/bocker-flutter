@@ -8,14 +8,16 @@ abstract class AccountsRepository {
   Future<Either<Failure, List<AccountTypeModel>>> getAccountTypes();
   Future<Either<Failure, List<LeverageModel>>> getLeverages();
   Future<Either<Failure, List<OpeningBalanceModel>>> getOpeningBalances();
-  Future<Either<Failure, AccountModel>> createAccount(Map<String, dynamic> data);
+  Future<Either<Failure, AccountModel>> createAccount(
+    Map<String, dynamic> data,
+  );
 }
 
 class AccountsRepositoryImpl implements AccountsRepository {
   final AccountsRemoteDataSource _remoteDataSource;
 
   AccountsRepositoryImpl({required AccountsRemoteDataSource remoteDataSource})
-      : _remoteDataSource = remoteDataSource;
+    : _remoteDataSource = remoteDataSource;
 
   @override
   Future<Either<Failure, List<AccountModel>>> getAccounts() async {
@@ -33,12 +35,15 @@ class AccountsRepositoryImpl implements AccountsRepository {
   }
 
   @override
-  Future<Either<Failure, List<OpeningBalanceModel>>> getOpeningBalances() async {
+  Future<Either<Failure, List<OpeningBalanceModel>>>
+  getOpeningBalances() async {
     return await _remoteDataSource.getOpeningBalances();
   }
 
   @override
-  Future<Either<Failure, AccountModel>> createAccount(Map<String, dynamic> data) async {
+  Future<Either<Failure, AccountModel>> createAccount(
+    Map<String, dynamic> data,
+  ) async {
     return await _remoteDataSource.createAccount(data);
   }
 }

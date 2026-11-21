@@ -23,26 +23,27 @@ class EditFormCubit extends Cubit<EditFormState> {
       Map<String, dynamic> frontMap = {};
       if (frontSidePath.isNotEmpty && !frontSidePath.startsWith('/x-api')) {
         final frontRes = await _repository.uploadImage(frontSidePath);
-        frontRes.fold(
-          (l) => throw Exception(l.message),
-          (r) => frontMap = r,
-        );
+        frontRes.fold((l) => throw Exception(l.message), (r) => frontMap = r);
       } else if (frontSidePath.startsWith('/x-api')) {
-         // It's already uploaded, but we might need the original map from the previous form. 
-         // For simplicity if we don't have the map, we might just pass the path, but the backend usually expects the map.
-         // Let's assume if it's not changed, we pass what we have. 
-         // But the API might complain. We will handle this in UI by passing the original map.
-         // Wait, we need to pass the original map if it hasn't changed.
+        // It's already uploaded, but we might need the original map from the previous form.
+        // For simplicity if we don't have the map, we might just pass the path, but the backend usually expects the map.
+        // Let's assume if it's not changed, we pass what we have.
+        // But the API might complain. We will handle this in UI by passing the original map.
+        // Wait, we need to pass the original map if it hasn't changed.
       }
 
       Map<String, dynamic> backMap = {};
-      if (backSidePath != null && backSidePath.isNotEmpty && !backSidePath.startsWith('/x-api')) {
+      if (backSidePath != null &&
+          backSidePath.isNotEmpty &&
+          !backSidePath.startsWith('/x-api')) {
         final backRes = await _repository.uploadImage(backSidePath);
         backRes.fold((l) => throw Exception(l.message), (r) => backMap = r);
       }
 
       Map<String, dynamic> fileMap = {};
-      if (otherDocPath != null && otherDocPath.isNotEmpty && !otherDocPath.startsWith('/x-api')) {
+      if (otherDocPath != null &&
+          otherDocPath.isNotEmpty &&
+          !otherDocPath.startsWith('/x-api')) {
         final fileRes = await _repository.uploadFile(otherDocPath);
         fileRes.fold((l) => throw Exception(l.message), (r) => fileMap = r);
       }
@@ -58,9 +59,7 @@ class EditFormCubit extends Cubit<EditFormState> {
       if (backMap.isNotEmpty) identityForm["imageBackSide"] = backMap;
       if (fileMap.isNotEmpty) identityForm["file"] = fileMap;
 
-      await _repository.updateOneUserForm({
-        "identityForm": identityForm,
-      });
+      await _repository.updateOneUserForm({"identityForm": identityForm});
 
       emit(const EditFormState.success());
     } catch (e) {
@@ -78,9 +77,14 @@ class EditFormCubit extends Cubit<EditFormState> {
     emit(const EditFormState.loading());
     try {
       Map<String, dynamic> addressDocMap = {};
-      if (addressDocPath != null && addressDocPath.isNotEmpty && !addressDocPath.startsWith('/x-api')) {
+      if (addressDocPath != null &&
+          addressDocPath.isNotEmpty &&
+          !addressDocPath.startsWith('/x-api')) {
         final addressDocRes = await _repository.uploadFile(addressDocPath);
-        addressDocRes.fold((l) => throw Exception(l.message), (r) => addressDocMap = r);
+        addressDocRes.fold(
+          (l) => throw Exception(l.message),
+          (r) => addressDocMap = r,
+        );
       }
 
       final addressForm = {
@@ -92,9 +96,7 @@ class EditFormCubit extends Cubit<EditFormState> {
 
       if (addressDocMap.isNotEmpty) addressForm["document"] = addressDocMap;
 
-      await _repository.updateOneUserForm({
-        "addressForm": addressForm,
-      });
+      await _repository.updateOneUserForm({"addressForm": addressForm});
 
       emit(const EditFormState.success());
     } catch (e) {

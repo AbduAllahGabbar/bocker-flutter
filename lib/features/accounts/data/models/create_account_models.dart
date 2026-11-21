@@ -3,11 +3,7 @@ class AccountTypeModel {
   final num min;
   final String name;
 
-  AccountTypeModel({
-    required this.code,
-    required this.min,
-    required this.name,
-  });
+  AccountTypeModel({required this.code, required this.min, required this.name});
 
   factory AccountTypeModel.fromJson(Map<String, dynamic> json) {
     return AccountTypeModel(
@@ -32,16 +28,10 @@ class LeverageModel {
   final String code;
   final String name;
 
-  LeverageModel({
-    required this.code,
-    required this.name,
-  });
+  LeverageModel({required this.code, required this.name});
 
   factory LeverageModel.fromJson(Map<String, dynamic> json) {
-    return LeverageModel(
-      code: json['code'] ?? '',
-      name: json['name'] ?? '',
-    );
+    return LeverageModel(code: json['code'] ?? '', name: json['name'] ?? '');
   }
 
   @override
@@ -59,10 +49,7 @@ class OpeningBalanceModel {
   final String code;
   final String name;
 
-  OpeningBalanceModel({
-    required this.code,
-    required this.name,
-  });
+  OpeningBalanceModel({required this.code, required this.name});
 
   factory OpeningBalanceModel.fromJson(Map<String, dynamic> json) {
     return OpeningBalanceModel(

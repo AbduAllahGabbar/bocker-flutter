@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../cubit/accounts_cubit.dart';
@@ -42,10 +42,7 @@ class _AccountsView extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             'Accounts'.tran,
-            style: TextStyle(
-              fontSize: 20.s,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20.s, fontWeight: FontWeight.bold),
           ),
           centerTitle: true,
           bottom: TabBar(
@@ -61,7 +58,17 @@ class _AccountsView extends StatelessWidget {
         floatingActionButton: Padding(
           padding: EdgeInsets.only(bottom: 90.h),
           child: FloatingActionButton(
-            onPressed: () => context.pushNamed(RoutesNames.createAccount),
+            onPressed: () async {
+              // The create page lives on the root navigator, so it reports
+              // success back through its pop result instead of reaching into
+              // this page's cubit.
+              final created = await context.pushNamed(
+                RoutesNames.createAccount,
+              );
+              if (created == true && context.mounted) {
+                context.read<AccountsCubit>().fetchAccounts();
+              }
+            },
             backgroundColor: theme.primaryColor,
             child: const Icon(Icons.add, color: Colors.white),
           ),
@@ -81,20 +88,25 @@ class _AccountsView extends StatelessWidget {
                     ),
                     SizedBox(height: 16.s),
                     ElevatedButton(
-                      onPressed: () => context.read<AccountsCubit>().fetchAccounts(),
+                      onPressed: () =>
+                          context.read<AccountsCubit>().fetchAccounts(),
                       child: Text('Retry'.tran),
                     ),
                   ],
                 ),
               );
             } else if (state is AccountsLoaded) {
-              final realAccounts = state.accounts.where((a) => a.type == 'real').toList();
-              final demoAccounts = state.accounts.where((a) => a.type == 'demo').toList();
+              final realAccounts = state.accounts
+                  .where((a) => a.type == 'real')
+                  .toList();
+              final demoAccounts = state.accounts
+                  .where((a) => a.type == 'demo')
+                  .toList();
 
               return TabBarView(
                 children: [
-                  _buildAccountList(context,realAccounts),
-                  _buildAccountList(context,demoAccounts),
+                  _buildAccountList(context, realAccounts),
+                  _buildAccountList(context, demoAccounts),
                 ],
               );
             }
@@ -105,20 +117,18 @@ class _AccountsView extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountList(BuildContext context,List accounts) {
+  Widget _buildAccountList(BuildContext context, List accounts) {
     if (accounts.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () async => await context.read<AccountsCubit>().fetchAccounts(),
+        onRefresh: () async =>
+            await context.read<AccountsCubit>().fetchAccounts(),
         child: ListView(
           children: [
             SizedBox(height: MediaQuery.of(context).size.height * 0.3),
             Center(
               child: Text(
                 'No accounts found'.tran,
-                style: TextStyle(
-                  fontSize: 16.s,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16.s, color: Colors.grey),
               ),
             ),
           ],
@@ -129,7 +139,7 @@ class _AccountsView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<AccountsCubit>().fetchAccounts(),
       child: ListView.separated(
-        padding: EdgeInsets.fromLTRB(16.s,0,16.s,90.s),
+        padding: EdgeInsets.fromLTRB(16.s, 0, 16.s, 90.s),
         itemCount: accounts.length,
         separatorBuilder: (context, index) => SizedBox(height: 3.s),
         itemBuilder: (context, index) {

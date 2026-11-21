@@ -6,7 +6,5 @@ class AppConstants {
   static const double borderRadius90 = 90.0;
   static const double borderRadius100 = 100.0;
   static const double borderRadius16 = 16.0;
-  static const double maxWidth=1300;
-
-
+  static const double maxWidth = 1300;
 }

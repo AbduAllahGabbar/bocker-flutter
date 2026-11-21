@@ -7,6 +7,7 @@ import '../../../features/auth/data/repository/user_access.dart';
 import '../../../features/layout/presentation/pages/layout_view.dart';
 import '../../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../di/di_container.dart';
+import '../../services/referral/referral_service.dart';
 import 'auth_routes/auth_router.dart';
 import '../../../features/home/presentation/pages/home_page.dart';
 import '../../../features/mt5_data/presentation/pages/mt5_data_page.dart';
@@ -30,6 +31,7 @@ import '../../../features/payment_methods/presentation/pages/add_card_payment_pa
 import '../../../features/payment_methods/presentation/pages/add_bank_payment_page.dart';
 import '../../../features/payment_methods/presentation/pages/add_payment_success_page.dart';
 import '../../../features/transactions/data/models/payment_method_model.dart';
+import '../../../features/payment_methods/data/models/user_payment_method_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/profile/presentation/pages/edit_identity_page.dart';
 import '../../../features/profile/presentation/pages/edit_address_page.dart';
@@ -39,6 +41,7 @@ import '../../../features/accounts/presentation/pages/accounts_page.dart';
 import '../../../features/accounts/presentation/pages/create_account_page.dart';
 import '../../../features/ib_dashboard/presentation/pages/ib_dashboard_page.dart';
 import '../../../features/ib_dashboard/presentation/pages/ib_transactions_page.dart';
+import '../../../features/notifications/presentation/pages/notifications_page.dart';
 
 class RoutesNames {
   const RoutesNames._();
@@ -67,6 +70,7 @@ class RoutesNames {
   static const String mt5Data = "mt5-data";
   static const String ibDashboard = "ib-dashboard";
   static const String ibTransactions = "ib-transactions";
+  static const String notifications = "notifications";
 
   static const String home = "home";
   static const String checkout = "checkout";
@@ -164,6 +168,13 @@ class RouterManger {
     debugLogDiagnostics: true,
     navigatorKey: rootNavigatorKey,
     redirect: (context, state) {
+      // Affiliate invitation links land here first (cold start, warm start,
+      // or ordinary in-app navigation). Capturing centrally means no screen
+      // has to know about referrals, and the existing redirect behaviour
+      // below is untouched. The host is never inspected, so any portal
+      // domain works.
+      ReferralService.instance.captureFromUri(state.uri);
+
       return state.uri.toString() == "/"
           ? RouterChecker.initialChecker(context, state)
           : null;
@@ -200,7 +211,24 @@ class RouterManger {
             state: state,
             child: BlocProvider(
               create: (context) => DI.initAddTransaction(),
-              child: AddTransactionPage(initialType: type, initialAccount: account),
+              child: AddTransactionPage(
+                initialType: type,
+                initialAccount: account,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: "/${RoutesNames.notifications}",
+        name: RoutesNames.notifications,
+        pageBuilder: (context, state) {
+          return RouterManger.buildPageWithDefaultTransition(
+            context: context,
+            state: state,
+            child: BlocProvider(
+              create: (context) => DI.initNotifications(),
+              child: const NotificationsPageView(),
             ),
           );
         },
@@ -214,7 +242,8 @@ class RouterManger {
             context: context,
             state: state,
             child: BlocProvider(
-              create: (context) => DI.initMt5Data()..init(initialAccount: account),
+              create: (context) =>
+                  DI.initMt5Data()..init(initialAccount: account),
               child: const Mt5DataPage(),
             ),
           );
@@ -279,8 +308,13 @@ class RouterManger {
       return RouterManger.buildPageWithDefaultTransition(
         context: context,
         state: state,
-        child: BlocProvider(
-          create: (context) => DI.initTransactions()..fetchTransactions(),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (context) => DI.initTransactions()..fetchTransactions(),
+            ),
+            BlocProvider(create: (context) => DI.initAccounts()),
+          ],
           child: const HomePage(),
         ),
       );
@@ -356,11 +390,14 @@ class RouterManger {
         path: RoutesNames.addCryptoPayment,
         name: RoutesNames.addCryptoPayment,
         pageBuilder: (context, state) {
-          final method = state.extra as PaymentMethodModel;
+          final args = _PaymentFormArgs.from(state.extra);
           return RouterManger.buildPageWithDefaultTransition(
             context: context,
             state: state,
-            child: AddCryptoPaymentPage(method: method),
+            child: AddCryptoPaymentPage(
+              method: args.method,
+              replacing: args.replacing,
+            ),
           );
         },
       ),
@@ -369,11 +406,14 @@ class RouterManger {
         path: RoutesNames.addCardPayment,
         name: RoutesNames.addCardPayment,
         pageBuilder: (context, state) {
-          final method = state.extra as PaymentMethodModel;
+          final args = _PaymentFormArgs.from(state.extra);
           return RouterManger.buildPageWithDefaultTransition(
             context: context,
             state: state,
-            child: AddCardPaymentPage(method: method),
+            child: AddCardPaymentPage(
+              method: args.method,
+              replacing: args.replacing,
+            ),
           );
         },
       ),
@@ -382,11 +422,14 @@ class RouterManger {
         path: RoutesNames.addBankPayment,
         name: RoutesNames.addBankPayment,
         pageBuilder: (context, state) {
-          final method = state.extra as PaymentMethodModel;
+          final args = _PaymentFormArgs.from(state.extra);
           return RouterManger.buildPageWithDefaultTransition(
             context: context,
             state: state,
-            child: AddBankPaymentPage(method: method),
+            child: AddBankPaymentPage(
+              method: args.method,
+              replacing: args.replacing,
+            ),
           );
         },
       ),
@@ -564,4 +607,28 @@ class RouterManger {
   );
 
   static final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+}
+
+/// Arguments for the add/edit payment-method pages.
+///
+/// `extra` is either the catalogue entry to add, or a map carrying that entry
+/// plus the saved method being replaced (the edit flow).
+class _PaymentFormArgs {
+  final PaymentMethodModel method;
+  final UserPaymentMethodModel? replacing;
+
+  const _PaymentFormArgs({required this.method, this.replacing});
+
+  factory _PaymentFormArgs.from(Object? extra) {
+    if (extra is PaymentMethodModel) {
+      return _PaymentFormArgs(method: extra);
+    }
+    if (extra is Map) {
+      return _PaymentFormArgs(
+        method: extra['method'] as PaymentMethodModel,
+        replacing: extra['replacing'] as UserPaymentMethodModel?,
+      );
+    }
+    throw ArgumentError('Missing payment method argument');
+  }
 }

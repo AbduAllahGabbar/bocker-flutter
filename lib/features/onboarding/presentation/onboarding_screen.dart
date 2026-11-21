@@ -1,10 +1,9 @@
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jiffy/jiffy.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/componants/logo_widget.dart';
 import 'package:boker/core/componants/my_elevated_button.dart';
 import 'package:boker/core/config/local/cache_service.dart';
@@ -62,19 +61,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: "A complete-shopping-experience".tran,
       image: "assets/on_boarding/on_boarding_1.png",
       desc:
-          "Choose from a wide selection of fresh products and daily deals, all your household needs in one place.".tran,
+          "Choose from a wide selection of fresh products and daily deals, all your household needs in one place."
+              .tran,
     ),
     OnboardingContents(
       title: "Fast delivery to-your door-".tran,
       image: "assets/on_boarding/on_boarding_2.png",
       desc:
-          "Shop comfortably, and we’ll deliver your order quickly to your home, without crowds or waiting.".tran,
+          "Shop comfortably, and we’ll deliver your order quickly to your home, without crowds or waiting."
+              .tran,
     ),
     OnboardingContents(
       title: "Easy experience and-reliable-payment".tran,
       image: "assets/on_boarding/on_boarding_3.png",
       desc:
-          "Choose the payment method that suits you, and let us take care of delivering your order safely and professionally.".tran,
+          "Choose the payment method that suits you, and let us take care of delivering your order safely and professionally."
+              .tran,
     ),
   ];
 
@@ -270,7 +272,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     fontSize: 15.h,
                                   ),
                                 ),
-                                child:  Text(
+                                child: Text(
                                   "Skip".tran,
                                   style: TextStyle(color: Colors.black),
                                 ),
@@ -311,17 +313,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: 24.h,
-            vertical: 20.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 20.h),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 40.h),
               // Logo
-              LogoWidget(height: 188.h,width: 188.s,),
+              LogoWidget(height: 188.h, width: 188.s),
               SizedBox(height: 40.h),
               // Title
               RichText(
@@ -333,8 +332,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     fontWeight: FontWeight.w800,
                     fontSize: 28.h,
                   ),
-                  children:  [
-                    TextSpan(text: "Welcome ".tran,),
+                  children: [
+                    TextSpan(text: "Welcome ".tran),
                     TextSpan(
                       text: "Back!".tran,
                       style: TextStyle(color: Color(0xffF3CD11)),
@@ -346,7 +345,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               SizedBox(height: 8.h),
               // Description
               Text(
-                "Get fresh groceries delivered to your doorstep in minutes".tran,
+                "Get fresh groceries delivered to your doorstep in minutes"
+                    .tran,
                 style: TextStyle(
                   color: colorScheme.onSurfaceVariant,
                   fontFamily: "Mulish",
@@ -396,7 +396,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // // Divider
               // AuthDivider(text: "or continue with".tran, res: res),
               // SizedBox(height: 32.h),
-               // Google Sign Up Button
+              // Google Sign Up Button
               // GoogleButtonWidget(res: res),
             ],
           ),
@@ -410,13 +410,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       context: context,
       backgroundColor: Colors.white,
       isScrollControlled: true,
-      constraints: BoxConstraints(
-        maxWidth: AppConstants.maxWidth,
-      ),
+      constraints: BoxConstraints(maxWidth: AppConstants.maxWidth),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24.h),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.h)),
       ),
       builder: (context) {
         return const _LanguageBottomSheetContent();
@@ -574,11 +570,7 @@ class __LanguageBottomSheetContentState
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check,
-                color: const Color(0xFF1D3A99),
-                size: 24.h,
-              ),
+              Icon(Icons.check, color: const Color(0xFF1D3A99), size: 24.h),
           ],
         ),
       ),

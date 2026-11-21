@@ -8,7 +8,9 @@ abstract class AccountsRemoteDataSource {
   Future<Either<Failure, List<AccountTypeModel>>> getAccountTypes();
   Future<Either<Failure, List<LeverageModel>>> getLeverages();
   Future<Either<Failure, List<OpeningBalanceModel>>> getOpeningBalances();
-  Future<Either<Failure, AccountModel>> createAccount(Map<String, dynamic> data);
+  Future<Either<Failure, AccountModel>> createAccount(
+    Map<String, dynamic> data,
+  );
 }
 
 class AccountsRemoteDataSourceImpl implements AccountsRemoteDataSource {
@@ -19,10 +21,7 @@ class AccountsRemoteDataSourceImpl implements AccountsRemoteDataSource {
   @override
   Future<Either<Failure, List<AccountModel>>> getAccounts() async {
     try {
-      final response = await _dio.post(
-        '/accounts/all',
-        data: {},
-      );
+      final response = await _dio.post('/accounts/all', data: {});
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
@@ -53,7 +52,9 @@ class AccountsRemoteDataSourceImpl implements AccountsRemoteDataSource {
         if (data is Map<String, dynamic> && data['done'] == true) {
           final list = data['list'] as List?;
           if (list != null) {
-            return Right(list.map((e) => AccountTypeModel.fromJson(e)).toList());
+            return Right(
+              list.map((e) => AccountTypeModel.fromJson(e)).toList(),
+            );
           }
         }
         return const Right([]);
@@ -85,7 +86,8 @@ class AccountsRemoteDataSourceImpl implements AccountsRemoteDataSource {
   }
 
   @override
-  Future<Either<Failure, List<OpeningBalanceModel>>> getOpeningBalances() async {
+  Future<Either<Failure, List<OpeningBalanceModel>>>
+  getOpeningBalances() async {
     try {
       final response = await _dio.post('/openingBalanceList', data: {});
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -93,7 +95,9 @@ class AccountsRemoteDataSourceImpl implements AccountsRemoteDataSource {
         if (data is Map<String, dynamic> && data['done'] == true) {
           final list = data['list'] as List?;
           if (list != null) {
-            return Right(list.map((e) => OpeningBalanceModel.fromJson(e)).toList());
+            return Right(
+              list.map((e) => OpeningBalanceModel.fromJson(e)).toList(),
+            );
           }
         }
         return const Right([]);
@@ -105,7 +109,9 @@ class AccountsRemoteDataSourceImpl implements AccountsRemoteDataSource {
   }
 
   @override
-  Future<Either<Failure, AccountModel>> createAccount(Map<String, dynamic> data) async {
+  Future<Either<Failure, AccountModel>> createAccount(
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await _dio.post('/accounts/add', data: data);
       if (response.statusCode == 200 || response.statusCode == 201) {

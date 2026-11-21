@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HtmlRenderer
@@ -23,7 +23,7 @@ class HtmlRenderer extends StatelessWidget {
     final blocks = _HtmlParser.parse(html);
 
     return Column(
-      crossAxisAlignment:  CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final block in blocks)
           _buildBlock(theme, primary, onSurface, block),
@@ -139,7 +139,11 @@ class _Block {
   final String rawHtml; // inner HTML (for inline parsing)
   final String plainText; // stripped text (used for headings)
 
-  const _Block({required this.type, required this.rawHtml, this.plainText = ''});
+  const _Block({
+    required this.type,
+    required this.rawHtml,
+    this.plainText = '',
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -240,11 +244,16 @@ class _HtmlParser {
 
   static _BType _tagToType(String tag) {
     switch (tag) {
-      case 'h1': return _BType.h1;
-      case 'h2': return _BType.h2;
-      case 'h3': return _BType.h3;
-      case 'h4': return _BType.h4;
-      default:   return _BType.p;
+      case 'h1':
+        return _BType.h1;
+      case 'h2':
+        return _BType.h2;
+      case 'h3':
+        return _BType.h3;
+      case 'h4':
+        return _BType.h4;
+      default:
+        return _BType.p;
     }
   }
 
@@ -277,45 +286,79 @@ class _InlineParser {
       if (html[pos] != '<') {
         // Plain text token
         final next = html.indexOf('<', pos);
-        final chunk = next == -1 ? html.substring(pos) : html.substring(pos, next);
+        final chunk = next == -1
+            ? html.substring(pos)
+            : html.substring(pos, next);
         final text = _decodeEntities(chunk);
         if (text.isNotEmpty) spans.add(TextSpan(text: text));
         pos = next == -1 ? html.length : next;
       } else {
         // Tag token — find closing >
         final closePos = html.indexOf('>', pos);
-        if (closePos == -1) { pos++; continue; }
+        if (closePos == -1) {
+          pos++;
+          continue;
+        }
 
         final tag = html.substring(pos, closePos + 1);
-        final tagNameMatch = RegExp(r'^<\/?([a-zA-Z][a-zA-Z0-9]*)').firstMatch(tag);
+        final tagNameMatch = RegExp(
+          r'^<\/?([a-zA-Z][a-zA-Z0-9]*)',
+        ).firstMatch(tag);
         final tagName = tagNameMatch?.group(1)?.toLowerCase() ?? '';
 
         // Skip closing tags — their text is handled when opening tag is found
-        if (tag.startsWith('</')) { pos = closePos + 1; continue; }
+        if (tag.startsWith('</')) {
+          pos = closePos + 1;
+          continue;
+        }
 
         switch (tagName) {
           case 'strong':
           case 'b':
-            pos = _consumeInlineTag(html, pos, closePos, tagName, spans, (text) =>
-              TextSpan(text: text, style: const TextStyle(fontWeight: FontWeight.w700)));
+            pos = _consumeInlineTag(
+              html,
+              pos,
+              closePos,
+              tagName,
+              spans,
+              (text) => TextSpan(
+                text: text,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            );
             break;
 
           case 'em':
           case 'i':
-            pos = _consumeInlineTag(html, pos, closePos, tagName, spans, (text) =>
-              TextSpan(text: text, style: const TextStyle(fontStyle: FontStyle.italic)));
+            pos = _consumeInlineTag(
+              html,
+              pos,
+              closePos,
+              tagName,
+              spans,
+              (text) => TextSpan(
+                text: text,
+                style: const TextStyle(fontStyle: FontStyle.italic),
+              ),
+            );
             break;
 
           case 'a':
-            pos = _consumeInlineTag(html, pos, closePos, 'a', spans, (text) =>
-              TextSpan(
+            pos = _consumeInlineTag(
+              html,
+              pos,
+              closePos,
+              'a',
+              spans,
+              (text) => TextSpan(
                 text: text,
                 style: TextStyle(
                   color: linkColor,
                   decoration: TextDecoration.underline,
                   decorationColor: linkColor,
                 ),
-              ));
+              ),
+            );
             break;
 
           default:
@@ -326,7 +369,8 @@ class _InlineParser {
     }
 
     // Remove leading/trailing empty spans
-    while (spans.isNotEmpty && (spans.first as TextSpan?)?.text?.trim().isEmpty == true) {
+    while (spans.isNotEmpty &&
+        (spans.first as TextSpan?)?.text?.trim().isEmpty == true) {
       spans.removeAt(0);
     }
 

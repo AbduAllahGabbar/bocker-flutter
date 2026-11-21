@@ -1,34 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/di/di_container.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/componants/toast.dart';
 import '../../../../core/componants/async_dropdownmenu.dart';
 import 'package:dio/dio.dart';
+import '../../../../core/data/constants/apis_constants.dart';
 import '../../../transactions/data/models/payment_method_model.dart';
+import '../../data/models/user_payment_method_model.dart';
 import '../cubit/add_payment_method_cubit.dart';
 import '../cubit/add_payment_method_state.dart';
 
 class AddBankPaymentPage extends StatelessWidget {
   final PaymentMethodModel method;
-  
-  const AddBankPaymentPage({super.key, required this.method});
+
+  /// When set, saving replaces this existing method (the backend has no
+  /// update endpoint - see PaymentMethodsRepository.replacePaymentMethod).
+  final UserPaymentMethodModel? replacing;
+
+  const AddBankPaymentPage({super.key, required this.method, this.replacing});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => DI.initAddPaymentMethod(),
-      child: _AddBankPaymentView(method: method),
+      child: _AddBankPaymentView(method: method, replacing: replacing),
     );
   }
 }
 
 class _AddBankPaymentView extends StatefulWidget {
   final PaymentMethodModel method;
-  
-  const _AddBankPaymentView({required this.method});
+  final UserPaymentMethodModel? replacing;
+
+  const _AddBankPaymentView({required this.method, this.replacing});
 
   @override
   State<_AddBankPaymentView> createState() => _AddBankPaymentViewState();
@@ -47,9 +54,15 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
     if (_currencies.isNotEmpty) {
       return _currencies;
     }
-    
+
     try {
-      final response = await di<Dio>().post('https://boker.egytag.com/api/currencies/all', data: {});
+      final response = await di<Dio>().post(
+        ApiConstants.currenciesAll,
+        // Only the two fields the dropdown and the payload need.
+        data: {
+          "select": {"id": 1, "name": 1},
+        },
+      );
       if (response.statusCode == 200) {
         final list = response.data['list'] as List;
         _currencies = list.cast<Map<String, dynamic>>();
@@ -62,6 +75,27 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Edit flow: prefill with the method being replaced.
+    final existing = widget.replacing;
+    if (existing != null) {
+      _beneficiaryController.text = existing.beneficiaryName ?? '';
+      _accountController.text = existing.accountNumber ?? '';
+      _swiftController.text = existing.swiftCode ?? '';
+      _notesController.text = existing.notes ?? '';
+      final currency = existing.currency;
+      if (currency != null) {
+        _selectedCurrency = {
+          '_id': currency.id,
+          'id': currency.numId,
+          'name': currency.name,
+        };
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _beneficiaryController.dispose();
     _accountController.dispose();
@@ -71,32 +105,35 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
   }
 
   void _submit(BuildContext context) {
-    if (_beneficiaryController.text.trim().isEmpty || 
-        _accountController.text.trim().isEmpty || 
+    if (_beneficiaryController.text.trim().isEmpty ||
+        _accountController.text.trim().isEmpty ||
         _swiftController.text.trim().isEmpty ||
         _selectedCurrency == null) {
-      ToastState.error.snackBar(context, 'Please fill required fields and select currency');
+      ToastState.error.snackBar(
+        context,
+        'Please fill required fields and select currency',
+      );
       return;
     }
 
     Map<String, dynamic> data = {
-      "paymentMethod": {
-        "code": widget.method.code,
-        "name": widget.method.name,
-      },
+      "paymentMethod": {"code": widget.method.code, "name": widget.method.name},
       "beneficiaryName": _beneficiaryController.text.trim(),
       "accountNumber": _accountController.text.trim(),
       "swiftCode": _swiftController.text.trim(),
       "currency": {
         "_id": _selectedCurrency!["_id"],
         "name": _selectedCurrency!["name"],
-        "id": _selectedCurrency!["id"]
+        "id": _selectedCurrency!["id"],
       },
       if (_notesController.text.trim().isNotEmpty)
-        "notes": _notesController.text.trim()
+        "notes": _notesController.text.trim(),
     };
 
-    context.read<AddPaymentMethodCubit>().submitPaymentMethod(data);
+    context.read<AddPaymentMethodCubit>().submitPaymentMethod(
+      data,
+      replacingCode: widget.replacing?.code,
+    );
   }
 
   @override
@@ -112,17 +149,11 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
         title: Text(
           widget.method.name,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
-            onPressed: () {},
-          )
-        ],
       ),
       body: BlocConsumer<AddPaymentMethodCubit, AddPaymentMethodState>(
         listener: (context, state) {
@@ -137,14 +168,21 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
           return Stack(
             children: [
               ListView(
-                padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
+                padding: EdgeInsets.only(
+                  left: 20.w,
+                  right: 20.w,
+                  top: 20.h,
+                  bottom: 100.h,
+                ),
                 children: [
                   Text(
-                    'Add Bank Details',
+                    widget.replacing == null
+                        ? 'Add Bank Details'
+                        : 'Edit Bank Details',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                   SizedBox(height: 8.h),
                   Text(
@@ -157,22 +195,38 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
                     padding: EdgeInsets.all(20.r),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerLowest,
-                      border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildLabel('Beneficiary Name', context),
-                        _buildTextField(_beneficiaryController, 'e.g. John Doe', Icons.person_outline),
+                        _buildTextField(
+                          _beneficiaryController,
+                          'e.g. John Doe',
+                          Icons.person_outline,
+                        ),
                         SizedBox(height: 16.h),
-                        
+
                         _buildLabel('Account Number / IBAN', context),
-                        _buildTextField(_accountController, 'Enter account number', Icons.account_balance_outlined),
+                        _buildTextField(
+                          _accountController,
+                          'Enter account number',
+                          Icons.account_balance_outlined,
+                        ),
                         SizedBox(height: 16.h),
 
                         _buildLabel('SWIFT / BIC Code', context),
-                        _buildTextField(_swiftController, '8 OR 11 CHARACTERS', Icons.public),
+                        _buildTextField(
+                          _swiftController,
+                          '8 OR 11 CHARACTERS',
+                          Icons.public,
+                        ),
                         SizedBox(height: 16.h),
 
                         _buildLabel('Currency', context),
@@ -192,7 +246,9 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
                         _buildLabel('Reference / Notes (Optional)', context),
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: TextField(
@@ -200,13 +256,26 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
                             maxLines: 3,
                             decoration: InputDecoration(
                               hintText: 'Add a note for this recipient...',
-                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                              hintStyle: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.5),
+                              ),
                               prefixIcon: Padding(
                                 padding: EdgeInsets.only(bottom: 40.h),
-                                child: Icon(Icons.notes, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                child: Icon(
+                                  Icons.notes,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                               ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16.h,
+                                horizontal: 16.w,
+                              ),
                             ),
                           ),
                         ),
@@ -229,15 +298,20 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
                         borderRadius: BorderRadius.circular(30.r),
                       ),
                     ),
-                    icon: isLoading 
+                    icon: isLoading
                         ? SizedBox(
-                            width: 20.h, 
-                            height: 20.h, 
-                            child: CircularProgressIndicator(color: colorScheme.onPrimary, strokeWidth: 2)
+                            width: 20.h,
+                            height: 20.h,
+                            child: CircularProgressIndicator(
+                              color: colorScheme.onPrimary,
+                              strokeWidth: 2,
+                            ),
                           )
                         : Icon(Icons.save, color: colorScheme.onPrimary),
                     label: Text(
-                      'Save Payment Details',
+                      widget.replacing == null
+                          ? 'Save Payment Details'
+                          : 'Replace Payment Details',
                       style: TextStyle(
                         fontSize: 16.s,
                         fontWeight: FontWeight.w600,
@@ -266,7 +340,11 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -276,8 +354,15 @@ class _AddBankPaymentViewState extends State<_AddBankPaymentView> {
         controller: controller,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-          prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          hintStyle: TextStyle(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           border: InputBorder.none,
           filled: true,
           contentPadding: EdgeInsets.symmetric(vertical: 16.h),

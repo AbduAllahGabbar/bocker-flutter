@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'package:easy_localization/easy_localization.dart' show BuildContextEasyLocalizationExtension;
+import 'package:easy_localization/easy_localization.dart'
+    show BuildContextEasyLocalizationExtension;
 import 'package:flutter/gestures.dart';
 import 'package:boker/core/componants/logo_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/componants/toast.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../core/componants/my_elevated_button.dart';
@@ -14,6 +15,8 @@ import '../../../core/componants/date_picker_field.dart';
 import '../../../core/config/language/language_manager.dart';
 import '../../../core/config/theme/theme.dart';
 import '../../../core/utils/constants/app_constants.dart';
+import '../../../core/services/referral/referral_service.dart';
+import '../../../core/utils/password_policy.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'auth_widgets.dart';
@@ -22,7 +25,7 @@ import 'pages/otp_fields.dart';
 class SignUpPage extends StatefulWidget {
   final String? refParam;
   final String? accGroupIdParam;
-  
+
   const SignUpPage({super.key, this.refParam, this.accGroupIdParam});
 
   @override
@@ -46,13 +49,14 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _agreeToIB = false;
 
   // Live password validation state
-  bool _hasMinLength = false;
-  bool _hasUppercase = false;
-  bool _hasNumber = false;
+  /// Live value backing the password-requirements checklist.
+  String _passwordValue = '';
+
+  /// Resend attempts are capped so a user cannot hammer the OTP mail endpoint.
+  static const int _maxOtpResendAttempts = 3;
+  int _otpResendAttempts = 0;
   bool _passwordFieldTouched = false;
 
-  String? _otpCustomerId;
-  String? _otpPhone;
   String? _otpEmail;
   String? _otpPassword;
 
@@ -71,7 +75,7 @@ class _SignUpPageState extends State<SignUpPage> {
     try {
       final authCubit = context.read<AuthCubit>();
       final list = await authCubit.getMt5Groups();
-      
+
       if (mounted) {
         setState(() {
           _mt5Groups = list;
@@ -117,22 +121,12 @@ class _SignUpPageState extends State<SignUpPage> {
   void _onPasswordChanged(String value) {
     setState(() {
       _passwordFieldTouched = true;
-      _hasMinLength = value.length >= 8;
-      _hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
-      _hasNumber = RegExp(r'[0-9]').hasMatch(value);
+      _passwordValue = value;
     });
   }
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter a password'.tran;
-    }
-    if (!_hasMinLength) return 'Password must be at least 8 characters'.tran;
-    if (!_hasUppercase) return 'Password must contain an uppercase letter'.tran;
-    if (!_hasNumber) return 'Password must contain a number'.tran;
-
-    return null;
-  }
+  // Mirrors the backend rules exactly - see PasswordPolicy.
+  String? _validatePassword(String? value) => PasswordPolicy.validate(value);
 
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
@@ -140,16 +134,6 @@ class _SignUpPageState extends State<SignUpPage> {
     }
     if (value != _passwordController.text) {
       return 'Passwords do not match'.tran;
-    }
-    return null;
-  }
-
-  String? _validateFullName(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your full name'.tran;
-    }
-    if (value.length < 4) {
-      return 'Please enter valid full name'.tran;
     }
     return null;
   }
@@ -188,12 +172,15 @@ class _SignUpPageState extends State<SignUpPage> {
         "isIb": _agreeToIB,
       };
 
-      if (widget.refParam != null) {
-        data[r"$ref"] = widget.refParam;
-      }
-      if (widget.accGroupIdParam != null) {
-        data[r"$accGroupId"] = int.tryParse(widget.accGroupIdParam!) ?? widget.accGroupIdParam;
-      }
+      // Affiliate referral: the values from the current route win, and the
+      // persisted ones (from a link opened earlier, possibly in a previous
+      // run of the app) are used otherwise. Nothing is added when there is no
+      // referral, so an ordinary registration payload is unchanged.
+      ReferralService.instance.applyToRegistrationPayload(
+        data,
+        overrideRef: widget.refParam,
+        overrideAccGroupId: widget.accGroupIdParam,
+      );
       if (_selectedMt5Group != null) {
         data["mt5Group"] = _selectedMt5Group;
       }
@@ -222,7 +209,6 @@ class _SignUpPageState extends State<SignUpPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final res = MyRes.of(context);
-    final isWeb = res.width > 600;
     final activeColor = ColorsManager.blueLight;
     final inactiveColor = colorScheme.surface;
     final primaryColor = colorScheme.primary;
@@ -252,15 +238,14 @@ class _SignUpPageState extends State<SignUpPage> {
               },
               otpRequired: (customerId, phone, email) {
                 setState(() {
-                  _otpCustomerId = customerId;
-                  _otpPhone = phone;
                   _otpEmail = email;
                 });
               },
               emailOtpVerified: () {
                 ToastState.success.snackBar(
                   context,
-                  'Email verified successfully. Proceeding to identity verification.'.tran,
+                  'Email verified successfully. Proceeding to identity verification.'
+                      .tran,
                 );
                 context.pushNamed(
                   RoutesNames.identityVerification,
@@ -278,8 +263,6 @@ class _SignUpPageState extends State<SignUpPage> {
                         .tran,
                   );
                   setState(() {
-                    _otpCustomerId = null;
-                    _otpPhone = null;
                     _otpEmail = null;
                   });
                 } else {
@@ -460,7 +443,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 hintText: 'Enter Company Name'.tran,
                                 controller: _firstNameController,
                                 keyboardType: TextInputType.text,
-                                validator: (val) => val == null || val.isEmpty ? 'Required'.tran : null,
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Required'.tran
+                                    : null,
                                 textInputAction: TextInputAction.next,
                               ),
                               SizedBox(height: 9.h),
@@ -471,7 +456,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 hintText: 'Enter First Name'.tran,
                                 controller: _firstNameController,
                                 keyboardType: TextInputType.text,
-                                validator: (val) => val == null || val.isEmpty ? 'Required'.tran : null,
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Required'.tran
+                                    : null,
                                 textInputAction: TextInputAction.next,
                               ),
                               SizedBox(height: 9.h),
@@ -480,7 +467,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 hintText: 'Enter Last Name'.tran,
                                 controller: _lastNameController,
                                 keyboardType: TextInputType.text,
-                                validator: (val) => val == null || val.isEmpty ? 'Required'.tran : null,
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Required'.tran
+                                    : null,
                                 textInputAction: TextInputAction.next,
                               ),
                               SizedBox(height: 9.h),
@@ -532,7 +521,6 @@ class _SignUpPageState extends State<SignUpPage> {
                               child: MyPhoneFromField(
                                 initPhone: "SA-+966-",
                                 controller: _phoneController,
-                                res: res,
                                 onChanged: (phone, formattedPhoneNumber) {},
                               ),
                             ),
@@ -619,10 +607,9 @@ class _SignUpPageState extends State<SignUpPage> {
                               SizedBox(height: 12.h),
                               _PasswordRequirementsWidget(
                                 res: res,
-                                hasMinLength: _hasMinLength,
-                                hasUppercase: _hasUppercase,
-
-                                hasNumber: _hasNumber,
+                                requirements: PasswordPolicy.requirements(
+                                  _passwordValue,
+                                ),
                               ),
                             ],
                             SizedBox(height: 9.h),
@@ -662,7 +649,10 @@ class _SignUpPageState extends State<SignUpPage> {
                             if (_isLoadingMt5Groups)
                               const Center(child: CircularProgressIndicator())
                             else if (_hasErrorMt5Groups)
-                              Text('Failed to load MT5 Groups'.tran, style: TextStyle(color: Colors.red))
+                              Text(
+                                'Failed to load MT5 Groups'.tran,
+                                style: TextStyle(color: Colors.red),
+                              )
                             else if (_mt5Groups.isNotEmpty)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,27 +668,39 @@ class _SignUpPageState extends State<SignUpPage> {
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<Map<String, dynamic>>(
                                     initialValue: _selectedMt5Group,
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
                                     decoration: InputDecoration(
                                       filled: true,
                                       fillColor: colorScheme.surface,
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16.w,
+                                        vertical: 12.h,
+                                      ),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                                        borderSide: BorderSide(
+                                          color: colorScheme.outlineVariant,
+                                        ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                                        borderSide: BorderSide(
+                                          color: colorScheme.outlineVariant,
+                                        ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: colorScheme.primary),
+                                        borderSide: BorderSide(
+                                          color: colorScheme.primary,
+                                        ),
                                       ),
                                     ),
                                     hint: Text('Select MT5 Group'.tran),
                                     items: _mt5Groups.map((group) {
-                                      return DropdownMenuItem<Map<String, dynamic>>(
+                                      return DropdownMenuItem<
+                                        Map<String, dynamic>
+                                      >(
                                         value: group,
                                         child: Text(group['name'].toString()),
                                       );
@@ -708,7 +710,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                         _selectedMt5Group = value;
                                       });
                                     },
-                                    validator: (value) => value == null ? 'Please select an MT5 Group'.tran : null,
+                                    validator: (value) => value == null
+                                        ? 'Please select an MT5 Group'.tran
+                                        : null,
                                   ),
                                   const SizedBox(height: 24),
                                 ],
@@ -919,8 +923,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 onPressed: () {
                   setState(() {
-                    _otpCustomerId = null;
-                    _otpPhone = null;
                     _otpEmail = null;
                   });
                 },
@@ -960,9 +962,32 @@ class _SignUpPageState extends State<SignUpPage> {
                     );
                   },
                   onResend: () async {
-                    // TODO: Replace with the actual reset OTP API once provided
-                    ToastState.error.snackBar(context, 'Resend OTP API not provided yet'.tran);
-                    return false;
+                    if (_otpResendAttempts >= _maxOtpResendAttempts) {
+                      ToastState.error.snackBar(
+                        context,
+                        'You have reached the maximum number of resend attempts. Please try again later.'
+                            .tran,
+                      );
+                      return false;
+                    }
+
+                    final error = await context
+                        .read<AuthCubit>()
+                        .resendEmailOtp(email: _otpEmail!);
+                    if (!context.mounted) return false;
+
+                    if (error != null) {
+                      ToastState.error.snackBar(context, error);
+                      return false;
+                    }
+
+                    _otpResendAttempts++;
+                    ToastState.success.snackBar(
+                      context,
+                      'A new verification code has been sent to your email'
+                          .tran,
+                    );
+                    return true;
                   },
                 );
               },
@@ -1083,6 +1108,7 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+
   Widget _buildLanguageDropdown(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
@@ -1090,9 +1116,7 @@ class _SignUpPageState extends State<SignUpPage> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: DropdownButtonHideUnderline(
@@ -1174,17 +1198,11 @@ class _SignUpPageState extends State<SignUpPage> {
 class _PasswordRequirementsWidget extends StatelessWidget {
   const _PasswordRequirementsWidget({
     required this.res,
-    required this.hasMinLength,
-    required this.hasUppercase,
-
-    required this.hasNumber,
+    required this.requirements,
   });
 
   final ResHelper res;
-  final bool hasMinLength;
-  final bool hasUppercase;
-
-  final bool hasNumber;
+  final List<PasswordRequirement> requirements;
 
   @override
   Widget build(BuildContext context) {
@@ -1209,41 +1227,15 @@ class _PasswordRequirementsWidget extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _RequirementRow(
-                      res: res,
-                      met: hasMinLength,
-                      label: 'At least 8 characters'.tran,
-                    ),
-                    SizedBox(height: res.h(6)),
-                    _RequirementRow(
-                      res: res,
-                      met: hasNumber,
-                      label: 'At least one number'.tran,
-                    ),
-                  ],
-                ),
+          ...requirements.map(
+            (requirement) => Padding(
+              padding: EdgeInsets.only(bottom: res.h(6)),
+              child: _RequirementRow(
+                res: res,
+                met: requirement.isMet,
+                label: requirement.label,
               ),
-              SizedBox(width: res.w(12)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _RequirementRow(
-                      res: res,
-                      met: hasUppercase,
-                      label: 'At least one uppercase'.tran,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

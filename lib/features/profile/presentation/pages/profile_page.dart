@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/features/auth/cubit/auth_cubit.dart';
 import 'package:boker/features/auth/cubit/auth_state.dart';
 import 'package:boker/features/auth/data/repository/user_access.dart';
@@ -14,7 +14,9 @@ import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/di/di_container.dart';
 import '../cubit/account_cubit.dart';
 import '../cubit/account_state.dart';
-import '../cubit/profile_cubit.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../../../notifications/data/models/notification_model.dart';
+import '../../../notifications/presentation/cubit/notification_counters_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -44,7 +46,7 @@ class _AccountViewState extends State<_AccountView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = UserAccess.user;
       if (user != null) {
-        context.read<ProfileCubit>().fetchUserView(user.userId);
+        DI.initProfile().fetchUserView(user.userId);
       }
     });
   }
@@ -81,19 +83,19 @@ class _AccountViewState extends State<_AccountView> {
                 Text(
                   'Logout'.tran,
                   style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20.s,
-                        color: colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20.s,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
                 SizedBox(height: 12.s),
                 Text(
                   'Are you sure you want to logout from your account?'.tran,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 14.s,
-                      ),
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 14.s,
+                  ),
                 ),
                 SizedBox(height: 24.s),
                 Row(
@@ -188,96 +190,117 @@ class _AccountViewState extends State<_AccountView> {
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics(),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 8.s),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.s,
+                    vertical: 8.s,
+                  ),
                   children: [
-                      _buildProfileHeader(state, context),
-                      SizedBox(height: 24.s),
-
-                      _buildSectionTitle('ACCOUNT MANAGEMENT', context),
-                      SizedBox(height: 12.s),
-                      _ProfileMenuTile(
-                        title: 'Payment Details'.tran,
-                        subtitle: 'Manage saved payment methods'.tran,
-                        icon: Icons.payment_outlined,
-                        onTap: () => context.pushNamed(RoutesNames.paymentDetails),
-                      ),
-                      _ProfileMenuTile(
-                        title: 'Verification Status'.tran,
-                        subtitle: (state.user?.isFormCompleted == true && state.user?.isVerifyEmail == true)
-                            ? 'Identity & Address Verified'.tran
-                            : 'Pending Verification'.tran,
-                        icon: Icons.verified_user_outlined,
-                        onTap: () => context.pushNamed(RoutesNames.verificationStatus),
-                      ),
-                      _ProfileMenuTile(
-                        title: 'My Agreements'.tran,
-                        subtitle: '4 Active contracts signed'.tran,
-                        icon: Icons.description_outlined,
-                        onTap: () => context.pushNamed(RoutesNames.agreements),
-                      ),
-                      _ProfileMenuTile(
-                        title: 'Support Messages'.tran,
-                        subtitle: 'No unread messages'.tran,
-                        icon: Icons.chat_bubble_outline,
-                        onTap: () => context.pushNamed(RoutesNames.supportChat),
-                      ),
-                      _ProfileMenuTile(
-                        title: 'Help Center'.tran,
-                        subtitle: 'View and manage support tickets'.tran,
-                        icon: Icons.help_outline,
-                        onTap: () => context.pushNamed(RoutesNames.helpCenter),
-                      ),
-                      SizedBox(height: 24.s),
-
-
-                      _buildSectionTitle('SECURITY & PREFERENCES', context),
-                      SizedBox(height: 12.s),
-                      _ProfileMenuTile(
-                        title: 'Account Security'.tran,
-                        subtitle: '2FA Enabled, Last changed 12d ago'.tran,
-                        icon: Icons.security,
-                        onTap: () {},
-                      ),
-                      _ProfileMenuTile(
-                        title: 'App Settings'.tran,
-                        subtitle: 'English, Push Notifications'.tran,
-                        icon: Icons.settings_outlined,
-                        onTap: () => context.pushNamed(RoutesNames.settings),
-                      ),
-                      _ProfileMenuTile(
-                        title: 'Change Password'.tran,
-                        subtitle: 'Update your account password'.tran,
-                        icon: Icons.lock_outline,
-                        onTap: () => context.pushNamed(RoutesNames.changePassword),
-                      ),
-
-                      SizedBox(height: 24.s),
-                    _buildSectionTitle('PERSONAL DETAILS', context),
-                    SizedBox(height: 12.s),
-                    _ProfileInfoTile(title: 'Email', value: state.user?.email ?? 'N/A'),
-                    _ProfileInfoTile(title: 'Phone', value: state.user?.displayPhone ?? 'N/A'),
-                    if (state.user?.idNumber != null)
-                      _ProfileInfoTile(title: 'ID Number', value: state.user!.idNumber!),
-                    if (state.user?.clientType != null)
-                      _ProfileInfoTile(title: 'Client Type', value: state.user!.clientType!),
-                    if (state.user?.birthDate != null)
-                      _ProfileInfoTile(title: 'Birth Date', value: state.user!.birthDate!),
+                    _buildProfileHeader(state, context),
                     SizedBox(height: 24.s),
 
-                      _buildLogoutButton(context, state),
-                      SizedBox(height: 24.s),
+                    _buildSectionTitle('ACCOUNT MANAGEMENT', context),
+                    SizedBox(height: 12.s),
+                    _ProfileMenuTile(
+                      title: 'Payment Details'.tran,
+                      subtitle: 'Manage saved payment methods'.tran,
+                      icon: Icons.payment_outlined,
+                      onTap: () =>
+                          context.pushNamed(RoutesNames.paymentDetails),
+                    ),
+                    _ProfileMenuTile(
+                      title: 'Verification Status'.tran,
+                      subtitle:
+                          (state.user?.isFormCompleted == true &&
+                              state.user?.isVerifyEmail == true)
+                          ? 'Identity & Address Verified'.tran
+                          : 'Pending Verification'.tran,
+                      icon: Icons.verified_user_outlined,
+                      onTap: () =>
+                          context.pushNamed(RoutesNames.verificationStatus),
+                    ),
+                    _ProfileMenuTile(
+                      title: 'My Agreements'.tran,
+                      subtitle: 'View and sign your agreements'.tran,
+                      icon: Icons.description_outlined,
+                      onTap: () => context.pushNamed(RoutesNames.agreements),
+                    ),
+                    // Unread count comes from the notifications summary API.
+                    BlocBuilder<NotificationCountersCubit, NotificationSummary>(
+                      bloc: DI.initNotificationCounters(),
+                      builder: (context, summary) {
+                        final unread = summary.unreadMessages;
+                        return _ProfileMenuTile(
+                          title: 'Support Messages'.tran,
+                          subtitle: unread > 0
+                              ? '$unread ${'unread messages'.tran}'
+                              : 'No unread messages'.tran,
+                          icon: Icons.chat_bubble_outline,
+                          trailingBadgeCount: unread,
+                          onTap: () =>
+                              context.pushNamed(RoutesNames.supportChat),
+                        );
+                      },
+                    ),
+                    _ProfileMenuTile(
+                      title: 'Help Center'.tran,
+                      subtitle: 'View and manage support tickets'.tran,
+                      icon: Icons.help_outline,
+                      onTap: () => context.pushNamed(RoutesNames.helpCenter),
+                    ),
+                    SizedBox(height: 24.s),
 
-                      Center(
-                        child: Text(
-                          'Version 2.4.1 (Stable Build)',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 12.s,
-                          ),
-                        ),
+                    _buildSectionTitle('SECURITY & PREFERENCES', context),
+                    SizedBox(height: 12.s),
+                    _ProfileMenuTile(
+                      title: 'App Settings'.tran,
+                      subtitle: 'Language and notifications'.tran,
+                      icon: Icons.settings_outlined,
+                      onTap: () => context.pushNamed(RoutesNames.settings),
+                    ),
+                    _ProfileMenuTile(
+                      title: 'Change Password'.tran,
+                      subtitle: 'Update your account password'.tran,
+                      icon: Icons.lock_outline,
+                      onTap: () =>
+                          context.pushNamed(RoutesNames.changePassword),
+                    ),
+
+                    SizedBox(height: 24.s),
+                    _buildSectionTitle('PERSONAL DETAILS', context),
+                    SizedBox(height: 12.s),
+                    _ProfileInfoTile(
+                      title: 'Email',
+                      value: state.user?.email ?? 'N/A',
+                    ),
+                    _ProfileInfoTile(
+                      title: 'Phone',
+                      value: state.user?.displayPhone ?? 'N/A',
+                    ),
+                    if (state.user?.idNumber != null)
+                      _ProfileInfoTile(
+                        title: 'ID Number',
+                        value: state.user!.idNumber!,
                       ),
-                      SizedBox(height: MediaQuery.paddingOf(context).bottom + 16.s),
-                    ],
+                    if (state.user?.clientType != null)
+                      _ProfileInfoTile(
+                        title: 'Client Type',
+                        value: state.user!.clientType!,
+                      ),
+                    if (state.user?.birthDate != null)
+                      _ProfileInfoTile(
+                        title: 'Birth Date',
+                        value: state.user!.birthDate!,
+                      ),
+                    SizedBox(height: 24.s),
+
+                    _buildLogoutButton(context, state),
+                    SizedBox(height: 24.s),
+
+                    const Center(child: _AppVersionLabel()),
+                    SizedBox(
+                      height: MediaQuery.paddingOf(context).bottom + 16.s,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -290,12 +313,12 @@ class _AccountViewState extends State<_AccountView> {
   Widget _buildProfileHeader(AccountState state, BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     final user = UserAccess.user;
     final displayName = user?.displayFullName ?? 'Guest User'.tran;
     final avatarUrl = user?.avatarUrl ?? user?.image;
     final userId = user?.userId ?? 'N/A';
-    
+
     return Column(
       children: [
         Stack(
@@ -314,7 +337,11 @@ class _AccountViewState extends State<_AccountView> {
                     ? NetworkImage(avatarUrl)
                     : null,
                 child: (avatarUrl == null || avatarUrl.isEmpty)
-                    ? Icon(Icons.person, size: 40.s, color: colorScheme.onSurfaceVariant)
+                    ? Icon(
+                        Icons.person,
+                        size: 40.s,
+                        color: colorScheme.onSurfaceVariant,
+                      )
                     : null,
               ),
             ),
@@ -325,7 +352,11 @@ class _AccountViewState extends State<_AccountView> {
                 shape: BoxShape.circle,
                 border: Border.all(color: colorScheme.surface, width: 2.s),
               ),
-              child: Icon(Icons.verified, color: colorScheme.onPrimary, size: 14.s),
+              child: Icon(
+                Icons.verified,
+                color: colorScheme.onPrimary,
+                size: 14.s,
+              ),
             ),
           ],
         ),
@@ -343,7 +374,7 @@ class _AccountViewState extends State<_AccountView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Account ID: $userId'.tran,
+              'Account ID: ${user?.userId}'.tran,
               style: TextStyle(
                 fontSize: 13.s,
                 color: colorScheme.onSurfaceVariant,
@@ -357,26 +388,15 @@ class _AccountViewState extends State<_AccountView> {
                   SnackBar(content: Text('Account ID copied'.tran)),
                 );
               },
-              child: Icon(Icons.copy, size: 14.s, color: colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-        SizedBox(height: 8.s),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.account_balance_wallet, size: 16.s, color: theme.primaryColor),
-            SizedBox(width: 4.s),
-            Text(
-              'Balance: \$${state.user?.balance ?? '0.00'}',
-              style: TextStyle(
-                fontSize: 16.s,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+              child: Icon(
+                Icons.copy,
+                size: 14.s,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
+
         // SizedBox(height: 12.s),
         // Container(
         //   padding: EdgeInsets.symmetric(horizontal: 12.s, vertical: 6.s),
@@ -420,10 +440,13 @@ class _AccountViewState extends State<_AccountView> {
                   ToastState.error.snackBar(context, failure.message);
                 },
                 (success) {
-                  ToastState.success.snackBar(context, 'Successfully became an IB'.tran);
+                  ToastState.success.snackBar(
+                    context,
+                    'Successfully became an IB'.tran,
+                  );
                   final user = UserAccess.user;
                   if (user != null) {
-                     context.read<ProfileCubit>().fetchUserView(user.userId);
+                    DI.initProfile().fetchUserView(user.userId);
                   }
                 },
               );
@@ -451,7 +474,6 @@ class _AccountViewState extends State<_AccountView> {
             ),
     );
   }
-
 
   Widget _buildSectionTitle(String title, BuildContext context) {
     final theme = Theme.of(context);
@@ -513,11 +535,15 @@ class _ProfileMenuTile extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
+  /// Optional unread badge drawn next to the chevron.
+  final int trailingBadgeCount;
+
   const _ProfileMenuTile({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.onTap,
+    this.trailingBadgeCount = 0,
   });
 
   @override
@@ -551,11 +577,7 @@ class _ProfileMenuTile extends StatelessWidget {
                   color: colorScheme.primaryContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  color: theme.primaryColor,
-                  size: 22.s,
-                ),
+                child: Icon(icon, color: theme.primaryColor, size: 22.s),
               ),
               SizedBox(width: 16.s),
               Expanded(
@@ -581,6 +603,23 @@ class _ProfileMenuTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (trailingBadgeCount > 0)
+                Container(
+                  margin: EdgeInsetsDirectional.only(end: 8.s),
+                  padding: EdgeInsets.symmetric(horizontal: 8.s, vertical: 2.s),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error,
+                    borderRadius: BorderRadius.circular(10.s),
+                  ),
+                  child: Text(
+                    trailingBadgeCount > 99 ? '99+' : '$trailingBadgeCount',
+                    style: TextStyle(
+                      color: colorScheme.onError,
+                      fontSize: 11.s,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               Icon(
                 Icons.chevron_right_rounded,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -594,10 +633,30 @@ class _ProfileMenuTile extends StatelessWidget {
   }
 }
 
+/// Shows the real application version from the build, not a hardcoded string.
+class _AppVersionLabel extends StatelessWidget {
+  const _AppVersionLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        if (info == null) return const SizedBox.shrink();
+        return Text(
+          '${'Version'.tran} ${info.version} (${info.buildNumber})',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 12.s),
+        );
+      },
+    );
+  }
+}
+
 class _ProfileInfoTile extends StatelessWidget {
   final String title;
   final String value;
-  
+
   const _ProfileInfoTile({required this.title, required this.value});
 
   @override
@@ -621,8 +680,21 @@ class _ProfileInfoTile extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title.tran, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14.s)),
-          Text(value, style: TextStyle(color: colorScheme.onSurface, fontSize: 14.s, fontWeight: FontWeight.w600)),
+          Text(
+            title.tran,
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 14.s,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 14.s,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

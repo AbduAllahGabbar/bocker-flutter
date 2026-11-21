@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 
 import '../packages/dropdown_search/dropdown_search.dart';
 
-
 class DropdownButtonSearch<T> extends StatelessWidget {
   const DropdownButtonSearch({
     super.key,
-     this.value,
+    this.value,
     required this.onChanged,
-     this.asyncItems,
+    this.asyncItems,
     this.label,
     this.borderRadius,
     this.enableBorderColor,
@@ -17,7 +16,7 @@ class DropdownButtonSearch<T> extends StatelessWidget {
     this.onView,
     this.validator,
     this.onBeforeOpening,
-    this.items=const [],
+    this.items = const [],
     this.showSearchBox = true,
     this.fit = FlexFit.loose,
     this.constraints = const BoxConstraints(maxHeight: 350),
@@ -39,7 +38,7 @@ class DropdownButtonSearch<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  DropdownSearch<T>(
+    return DropdownSearch<T>(
       // clickProps: ClickProps(
       //   onTapDown: (details) {
       //     print("dsadsadas sdas ");
@@ -72,18 +71,22 @@ class DropdownButtonSearch<T> extends StatelessWidget {
           decoration: InputDecoration(
             label: const Text("Search..."),
             contentPadding: const EdgeInsetsDirectional.symmetric(
-                horizontal: 10, vertical: 3),
+              horizontal: 10,
+              vertical: 3,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius ?? 8.0),
               borderSide: BorderSide(
-                color: enableBorderColor ?? Theme.of(context).colorScheme.outline,
+                color:
+                    enableBorderColor ?? Theme.of(context).colorScheme.outline,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius ?? 8.0),
               borderSide: BorderSide(
                 width: 0.1,
-                color: enableBorderColor ?? Theme.of(context).colorScheme.outline,
+                color:
+                    enableBorderColor ?? Theme.of(context).colorScheme.outline,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -109,14 +112,15 @@ class DropdownButtonSearch<T> extends StatelessWidget {
           suffixIcon: null,
           suffix: null,
           suffixText: null,
-          label: label==null?null: Text(label!),
-
+          label: label == null ? null : Text(label!),
         ),
       ),
       enabled: isWork,
-      items: (filter, loadProps) =>   asyncItems?.call()??items,
-      compareFn:(item1, item2) => item1==item2 ,
-      itemAsString: onView != null ? (item) => onView!(item) ?? "no view" : null,
+      items: (filter, loadProps) => asyncItems?.call() ?? items,
+      compareFn: (item1, item2) => item1 == item2,
+      itemAsString: onView != null
+          ? (item) => onView!(item) ?? "no view"
+          : null,
       onSelected: onChanged,
       validator: validator,
       onBeforePopupOpening: onBeforeOpening,

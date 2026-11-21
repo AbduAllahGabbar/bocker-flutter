@@ -6,24 +6,18 @@ class AgreementsRepository {
   AgreementsRepository(this.dio);
   Future<List<dynamic>> fetchAgreements() async {
     try {
-
-      
       final response = await dio.post(
         '/agreements/all',
         data: {
-          "where": {
-            "active": true
-          },
-          "select": {
-            "id": 1,
-            "name": 1,
-            "file": 1
-          }
+          "where": {"active": true},
+          "select": {"id": 1, "name": 1, "file": 1},
         },
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data is String ? json.decode(response.data) : response.data;
+        final data = response.data is String
+            ? json.decode(response.data)
+            : response.data;
         if (data['done'] == true && data['list'] != null) {
           return data['list'] as List<dynamic>;
         }

@@ -68,7 +68,7 @@ sealed class UserModel with _$UserModel {
     DateTime? updatedAt,
   }) = _UserModel;
 
-  String get userId => (id ?? sId ?? '').toString();
+  String get userId => id.toString();
 
   String get displayFullName {
     if (fullName != null && fullName!.isNotEmpty) return fullName!;

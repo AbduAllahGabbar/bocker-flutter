@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/componants/my_from_field.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../auth_widgets.dart';
@@ -13,7 +13,8 @@ class OtpFields extends StatefulWidget {
     required this.onVerify,
     required this.onResend,
     this.isLoading = false,
-    this.digits = 4, this.res,
+    this.digits = 4,
+    this.res,
   });
   final ResHelper? res;
   final void Function(String otp) onVerify;
@@ -27,6 +28,7 @@ class OtpFields extends StatefulWidget {
 class _OtpFieldsState extends State<OtpFields> {
   Timer? _timer;
   int _secondsRemaining = 60;
+  bool _isResending = false;
 
   late final List<TextEditingController> _pinControllers = List.generate(
     widget.digits,
@@ -65,7 +67,7 @@ class _OtpFieldsState extends State<OtpFields> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final res =widget.res??MyRes.of(context);
+    final res = widget.res ?? MyRes.of(context);
     return Column(
       children: [
         // Title
@@ -74,11 +76,11 @@ class _OtpFieldsState extends State<OtpFields> {
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: const Color(0xFF1E3A8A),
-            fontSize: 24.h
+            fontSize: 24.h,
           ),
           textAlign: TextAlign.center,
         ),
-         SizedBox(height: 40.h),
+        SizedBox(height: 40.h),
 
         // 6-digit PIN Input Fields
         Row(
@@ -86,10 +88,10 @@ class _OtpFieldsState extends State<OtpFields> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(
             widget.digits,
-            (index) => _buildPinField(index,res),
+            (index) => _buildPinField(index, res),
           ),
         ),
-         SizedBox(height: 24.h),
+        SizedBox(height: 24.h),
 
         // Resend Code and Timer
         Align(
@@ -99,24 +101,33 @@ class _OtpFieldsState extends State<OtpFields> {
                   "${'Resend code'.tran} (00:${_secondsRemaining.toString().padLeft(2, '0')})",
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    fontSize: 16.h
+                    fontSize: 16.h,
                   ),
                 )
               : TextButton(
-                  onPressed: _handleResendOtp,
+                  onPressed: _isResending ? null : _handleResendOtp,
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: Text(
-                    'Resend code'.tran,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.h
-                    ),
-                  ),
+                  child: _isResending
+                      ? SizedBox(
+                          height: 16.h,
+                          width: 16.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.primary,
+                          ),
+                        )
+                      : Text(
+                          'Resend code'.tran,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.h,
+                          ),
+                        ),
                 ),
         ),
         const SizedBox(height: 48),
@@ -128,7 +139,7 @@ class _OtpFieldsState extends State<OtpFields> {
             final isOtpComplete = otp.length == widget.digits;
 
             return AuthButton(
-              res:res,
+              res: res,
               text: 'Verify'.tran,
               onPressed: isOtpComplete ? _verifyOtp : null,
               isLoading: widget.isLoading,
@@ -139,13 +150,13 @@ class _OtpFieldsState extends State<OtpFields> {
     );
   }
 
-  Widget _buildPinField(int index,ResHelper res) {
+  Widget _buildPinField(int index, ResHelper res) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Flexible(
       child: Container(
-        margin:  EdgeInsets.symmetric(horizontal: 4.h),
+        margin: EdgeInsets.symmetric(horizontal: 4.h),
         height: 56.h,
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -236,9 +247,17 @@ class _OtpFieldsState extends State<OtpFields> {
   }
 
   Future<void> _handleResendOtp() async {
-    final success = await widget.onResend();
-    if (success) {
-      _startTimer();
+    if (_isResending) return;
+    setState(() => _isResending = true);
+    try {
+      final success = await widget.onResend();
+      if (!mounted) return;
+      if (success) {
+        // Restart the cool-down only when the code was actually re-sent.
+        _startTimer();
+      }
+    } finally {
+      if (mounted) setState(() => _isResending = false);
     }
   }
 

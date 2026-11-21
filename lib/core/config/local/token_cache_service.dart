@@ -70,6 +70,7 @@ class TokenCacheService {
 }
 */
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 class CacheSecureStorage {
   CacheSecureStorage._();
 
@@ -93,10 +94,8 @@ class CacheSecureStorage {
     String? refreshToken,
   }) async {
     await Future.wait([
-      if(accessToken!=null)
-        saveAccessToken(accessToken),
-      if(refreshToken!=null)
-        saveRefreshToken(refreshToken),
+      if (accessToken != null) saveAccessToken(accessToken),
+      if (refreshToken != null) saveRefreshToken(refreshToken),
     ]);
   }
 
@@ -117,9 +116,6 @@ class CacheSecureStorage {
   }
 
   static Future<void> clearTokens() async {
-    await Future.wait([
-      deleteAccessToken(),
-      deleteRefreshToken(),
-    ]);
+    await Future.wait([deleteAccessToken(), deleteRefreshToken()]);
   }
 }

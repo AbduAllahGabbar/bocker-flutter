@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/accounts_repository.dart';
+import '../../data/models/account_model.dart';
 import '../../data/models/create_account_models.dart';
 import 'create_account_state.dart';
 
@@ -15,9 +16,12 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
   List<LeverageModel>? _cachedLeverages;
   List<OpeningBalanceModel>? _cachedOpeningBalances;
 
+  /// The account returned by the last successful creation, if any.
+  AccountModel? createdAccount;
+
   CreateAccountCubit({required AccountsRepository repository})
-      : _repository = repository,
-        super(CreateAccountInitial()) {
+    : _repository = repository,
+      super(CreateAccountInitial()) {
     _emitFormUpdated();
   }
 
@@ -46,12 +50,14 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
   }
 
   void _emitFormUpdated() {
-    emit(CreateAccountFormUpdated(
-      isReal: _isReal,
-      selectedAccountType: _selectedAccountType,
-      selectedLeverage: _selectedLeverage,
-      selectedOpeningBalance: _selectedOpeningBalance,
-    ));
+    emit(
+      CreateAccountFormUpdated(
+        isReal: _isReal,
+        selectedAccountType: _selectedAccountType,
+        selectedLeverage: _selectedLeverage,
+        selectedOpeningBalance: _selectedOpeningBalance,
+      ),
+    );
   }
 
   Future<List<AccountTypeModel>> getAccountTypes() async {
@@ -59,13 +65,10 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
       return _cachedAccountTypes!;
     }
     final result = await _repository.getAccountTypes();
-    return result.fold(
-      (l) => [],
-      (r) {
-        _cachedAccountTypes = r;
-        return r;
-      },
-    );
+    return result.fold((l) => [], (r) {
+      _cachedAccountTypes = r;
+      return r;
+    });
   }
 
   Future<List<LeverageModel>> getLeverages() async {
@@ -73,13 +76,10 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
       return _cachedLeverages!;
     }
     final result = await _repository.getLeverages();
-    return result.fold(
-      (l) => [],
-      (r) {
-        _cachedLeverages = r;
-        return r;
-      },
-    );
+    return result.fold((l) => [], (r) {
+      _cachedLeverages = r;
+      return r;
+    });
   }
 
   Future<List<OpeningBalanceModel>> getOpeningBalances() async {
@@ -87,22 +87,29 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
       return _cachedOpeningBalances!;
     }
     final result = await _repository.getOpeningBalances();
-    return result.fold(
-      (l) => [],
-      (r) {
-        _cachedOpeningBalances = r;
-        return r;
-      },
-    );
+    return result.fold((l) => [], (r) {
+      _cachedOpeningBalances = r;
+      return r;
+    });
+  }
+
+  /// Returns the form to its editable state after the success sheet closes.
+  void resetForm() {
+    _selectedAccountType = null;
+    _selectedLeverage = null;
+    _selectedOpeningBalance = null;
+    _emitFormUpdated();
   }
 
   Future<void> submit() async {
-    if (_isReal && (_selectedAccountType == null || _selectedLeverage == null)) {
+    if (_isReal &&
+        (_selectedAccountType == null || _selectedLeverage == null)) {
       emit(CreateAccountError('Please select account type and leverage'));
       _emitFormUpdated();
       return;
     }
-    if (!_isReal && (_selectedLeverage == null || _selectedOpeningBalance == null)) {
+    if (!_isReal &&
+        (_selectedLeverage == null || _selectedOpeningBalance == null)) {
       emit(CreateAccountError('Please select leverage and opening balance'));
       _emitFormUpdated();
       return;
@@ -115,7 +122,7 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
       "leverage": {
         "code": _selectedLeverage!.code,
         "name": _selectedLeverage!.name,
-      }
+      },
     };
 
     if (_isReal) {
@@ -138,8 +145,10 @@ class CreateAccountCubit extends Cubit<CreateAccountState> {
         _emitFormUpdated();
       },
       (account) {
-        emit(CreateAccountSuccess());
-        _emitFormUpdated();
+        createdAccount = account;
+        emit(CreateAccountSuccess(account));
+        // The form state is NOT re-emitted here: doing so immediately replaced
+        // the success state and discarded the created account.
       },
     );
   }

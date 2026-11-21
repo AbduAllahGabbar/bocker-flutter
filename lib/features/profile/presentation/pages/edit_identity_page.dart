@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/config/env/app_config.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/componants/async_dropdownmenu.dart';
 import '../../../../core/componants/my_elevated_button.dart';
 import '../../../../core/componants/toast.dart';
@@ -15,7 +16,7 @@ import '../cubit/edit_form/edit_form_state.dart';
 
 class EditIdentityPage extends StatefulWidget {
   final Map<String, dynamic> initialForm;
-  
+
   const EditIdentityPage({super.key, required this.initialForm});
 
   @override
@@ -36,26 +37,34 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
   @override
   void initState() {
     super.initState();
-    _documentNoController = TextEditingController(text: widget.initialForm['docNumber']?.toString() ?? '');
-    
+    _documentNoController = TextEditingController(
+      text: widget.initialForm['docNumber']?.toString() ?? '',
+    );
+
     _hasExpirationDate = widget.initialForm['docExpiry'] == 'yes';
-    
+
     final dt = widget.initialForm['docType']?.toString();
     if (dt == 'passport') {
       _documentType = 'Passport';
-    } else if (dt == 'national-id') _documentType = 'National ID';
+    } else if (dt == 'national-id')
+      _documentType = 'National ID';
 
     if (widget.initialForm['countryIssue'] != null) {
-      _selectedCountry = CountryModel.fromJson(widget.initialForm['countryIssue']);
+      _selectedCountry = CountryModel.fromJson(
+        widget.initialForm['countryIssue'],
+      );
     }
 
-    if (widget.initialForm['imageFrontSide'] != null && widget.initialForm['imageFrontSide']['url'] != null) {
+    if (widget.initialForm['imageFrontSide'] != null &&
+        widget.initialForm['imageFrontSide']['url'] != null) {
       _frontSidePath = widget.initialForm['imageFrontSide']['url'];
     }
-    if (widget.initialForm['imageBackSide'] != null && widget.initialForm['imageBackSide']['url'] != null) {
+    if (widget.initialForm['imageBackSide'] != null &&
+        widget.initialForm['imageBackSide']['url'] != null) {
       _backSidePath = widget.initialForm['imageBackSide']['url'];
     }
-    if (widget.initialForm['file'] != null && widget.initialForm['file']['url'] != null) {
+    if (widget.initialForm['file'] != null &&
+        widget.initialForm['file']['url'] != null) {
       _otherDocPath = widget.initialForm['file']['url'];
     }
   }
@@ -87,9 +96,7 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
     }
   }
 
-  Future<void> _pickImage({
-    required Function(String path) onPicked,
-  }) async {
+  Future<void> _pickImage({required Function(String path) onPicked}) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -134,7 +141,10 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
 
   void _handleSubmit() {
     if (_hasExpirationDate == null) {
-      ToastState.error.snackBar(context, 'Please select if document has expiration date'.tran);
+      ToastState.error.snackBar(
+        context,
+        'Please select if document has expiration date'.tran,
+      );
       return;
     }
     if (_documentType == null) {
@@ -150,7 +160,12 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
       return;
     }
     if (_frontSidePath == null || _frontSidePath!.isEmpty) {
-      ToastState.error.snackBar(context, _documentType == 'Passport' ? 'Please upload passport document'.tran : 'Please upload front side of document'.tran);
+      ToastState.error.snackBar(
+        context,
+        _documentType == 'Passport'
+            ? 'Please upload passport document'.tran
+            : 'Please upload front side of document'.tran,
+      );
       return;
     }
 
@@ -186,64 +201,110 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: filePath != null ? const Color(0xFF6366F1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: filePath != null
+                ? const Color(0xFF6366F1)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: filePath != null ? 1.5 : 1.0,
           ),
         ),
         child: filePath != null
             ? (isImage
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(11),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: filePath.startsWith('/x-api') 
-                            ? Image.network('https://boker.egytag.com$filePath', fit: BoxFit.cover) 
-                            : Image.file(File(filePath), fit: BoxFit.cover),
-                        ),
-                        Positioned(
-                          top: 0, left: 0, right: 0, height: 40.s,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
-                                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: filePath.startsWith('/x-api')
+                                ? Image.network(
+                                    AppConfig.resolveUrl(filePath)!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(File(filePath), fit: BoxFit.cover),
+                          ),
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 40.s,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.transparent,
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 8.s, right: 8.s,
-                          child: InkWell(
-                            onTap: onRemove,
-                            child: Container(
-                              padding: EdgeInsets.all(4.s),
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                              child: Icon(Icons.delete, color: Colors.red, size: 20.s),
+                          Positioned(
+                            bottom: 8.s,
+                            right: 8.s,
+                            child: InkWell(
+                              onTap: onRemove,
+                              child: Container(
+                                padding: EdgeInsets.all(4.s),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                  size: 20.s,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(icon, size: 40.s, color: const Color(0xFF6366F1)),
-                        SizedBox(height: 8.s),
-                        Text(fileName ?? 'Document attached', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF6366F1), fontWeight: FontWeight.w500)),
-                        TextButton(onPressed: onRemove, child: Text('Remove'.tran, style: TextStyle(color: Colors.red))),
-                      ],
-                    ),
-                  ))
+                        ],
+                      ),
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            icon,
+                            size: 40.s,
+                            color: const Color(0xFF6366F1),
+                          ),
+                          SizedBox(height: 8.s),
+                          Text(
+                            fileName ?? 'Document attached',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF6366F1),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: onRemove,
+                            child: Text(
+                              'Remove'.tran,
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
             : Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 40.s, color: theme.colorScheme.onSurfaceVariant),
+                    Icon(
+                      icon,
+                      size: 40.s,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                     SizedBox(height: 8.s),
-                    Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -310,7 +371,10 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
         listener: (context, state) {
           state.maybeWhen(
             success: () {
-              ToastState.success.snackBar(context, 'Identity updated successfully!'.tran);
+              ToastState.success.snackBar(
+                context,
+                'Identity updated successfully!'.tran,
+              );
               context.pop(true);
             },
             error: (message) {
@@ -330,21 +394,25 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildSectionTitle('DOES THE DOCUMENT HAVE AN EXPIRATION DATE?'),
+                _buildSectionTitle(
+                  'DOES THE DOCUMENT HAVE AN EXPIRATION DATE?',
+                ),
                 Row(
                   children: [
                     _buildRadioOption(
                       label: 'No',
                       value: false,
                       groupValue: _hasExpirationDate,
-                      onChanged: (val) => setState(() => _hasExpirationDate = val),
+                      onChanged: (val) =>
+                          setState(() => _hasExpirationDate = val),
                     ),
                     SizedBox(width: 24.s),
                     _buildRadioOption(
                       label: 'Yes',
                       value: true,
                       groupValue: _hasExpirationDate,
-                      onChanged: (val) => setState(() => _hasExpirationDate = val),
+                      onChanged: (val) =>
+                          setState(() => _hasExpirationDate = val),
                     ),
                   ],
                 ),
@@ -354,7 +422,11 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
                 DropdownButtonFormField<String>(
                   initialValue: _documentType,
                   hint: Text('Select Document Type'.tran),
-                  items: ['Passport', 'National ID'].map((e) => DropdownMenuItem(value: e, child: Text(e.tran))).toList(),
+                  items: ['Passport', 'National ID']
+                      .map(
+                        (e) => DropdownMenuItem(value: e, child: Text(e.tran)),
+                      )
+                      .toList(),
                   onChanged: (val) {
                     setState(() {
                       _documentType = val;
@@ -363,8 +435,13 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
                     });
                   },
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.s)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.s),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.s,
+                      vertical: 12.s,
+                    ),
                   ),
                 ),
                 SizedBox(height: 16.s),
@@ -374,31 +451,45 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
                   controller: _documentNoController,
                   decoration: InputDecoration(
                     hintText: 'Enter Document Number'.tran,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.s)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.s),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.s,
+                      vertical: 12.s,
+                    ),
                   ),
                 ),
                 SizedBox(height: 16.s),
 
                 _buildSectionTitle('COUNTRY OF ISSUE'),
                 DropdownButtonSearch<CountryModel>(
-                  asyncItems: () async => await _countryServices.fetchCountries(),
+                  asyncItems: () async =>
+                      await _countryServices.fetchCountries(),
                   onView: (c) => c?.name,
-                  onChanged: (country) => setState(() => _selectedCountry = country),
+                  onChanged: (country) =>
+                      setState(() => _selectedCountry = country),
                   label: 'Select country'.tran,
                   value: _selectedCountry,
                 ),
                 SizedBox(height: 24.s),
 
                 if (_documentType != null) ...[
-                  _buildSectionTitle(_documentType == 'Passport' ? 'PASSPORT DOCUMENT' : 'FRONT SIDE OF DOCUMENT'),
+                  _buildSectionTitle(
+                    _documentType == 'Passport'
+                        ? 'PASSPORT DOCUMENT'
+                        : 'FRONT SIDE OF DOCUMENT',
+                  ),
                   _buildUploadBox(
                     context: context,
-                    label: _documentType == 'Passport' ? 'Upload Passport'.tran : 'Upload Front Side'.tran,
+                    label: _documentType == 'Passport'
+                        ? 'Upload Passport'.tran
+                        : 'Upload Front Side'.tran,
                     icon: Icons.camera_alt,
                     isImage: true,
                     filePath: _frontSidePath,
-                    onTap: () => _pickImage(onPicked: (p) => _frontSidePath = p),
+                    onTap: () =>
+                        _pickImage(onPicked: (p) => _frontSidePath = p),
                     onRemove: () => setState(() => _frontSidePath = null),
                   ),
                   SizedBox(height: 16.s),
@@ -411,7 +502,8 @@ class _EditIdentityPageState extends State<EditIdentityPage> {
                       icon: Icons.camera_alt,
                       isImage: true,
                       filePath: _backSidePath,
-                      onTap: () => _pickImage(onPicked: (p) => _backSidePath = p),
+                      onTap: () =>
+                          _pickImage(onPicked: (p) => _backSidePath = p),
                       onRemove: () => setState(() => _backSidePath = null),
                     ),
                     SizedBox(height: 16.s),

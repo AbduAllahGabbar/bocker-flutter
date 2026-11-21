@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/config/env/app_config.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 
 import 'dart:io';
 import '../../../../core/componants/async_dropdownmenu.dart';
@@ -34,15 +35,22 @@ class _EditAddressPageState extends State<EditAddressPage> {
   @override
   void initState() {
     super.initState();
-    _cityController = TextEditingController(text: widget.initialForm['city']?.toString() ?? '');
-    _addressController = TextEditingController(text: widget.initialForm['address']?.toString() ?? '');
-    _postalCodeController = TextEditingController(text: widget.initialForm['postalCode']?.toString() ?? '');
+    _cityController = TextEditingController(
+      text: widget.initialForm['city']?.toString() ?? '',
+    );
+    _addressController = TextEditingController(
+      text: widget.initialForm['address']?.toString() ?? '',
+    );
+    _postalCodeController = TextEditingController(
+      text: widget.initialForm['postalCode']?.toString() ?? '',
+    );
 
     if (widget.initialForm['country'] != null) {
       _addressCountry = CountryModel.fromJson(widget.initialForm['country']);
     }
 
-    if (widget.initialForm['document'] != null && widget.initialForm['document']['url'] != null) {
+    if (widget.initialForm['document'] != null &&
+        widget.initialForm['document']['url'] != null) {
       _addressDocPath = widget.initialForm['document']['url'];
     }
   }
@@ -133,64 +141,101 @@ class _EditAddressPageState extends State<EditAddressPage> {
         ),
         child: filePath != null
             ? (isImage
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(11),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: filePath.startsWith('/x-api') 
-                            ? Image.network('https://boker.egytag.com$filePath', fit: BoxFit.cover) 
-                            : Image.file(File(filePath), fit: BoxFit.cover),
-                        ),
-                        Positioned(
-                          top: 0, left: 0, right: 0, height: 40.s,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
-                                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: filePath.startsWith('/x-api')
+                                ? Image.network(
+                                    AppConfig.resolveUrl(filePath)!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(File(filePath), fit: BoxFit.cover),
+                          ),
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 40.s,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.transparent,
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 8.s, right: 8.s,
-                          child: InkWell(
-                            onTap: onRemove,
-                            child: Container(
-                              padding: EdgeInsets.all(4.s),
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                              child: Icon(Icons.delete, color: Colors.red, size: 20.s),
+                          Positioned(
+                            bottom: 8.s,
+                            right: 8.s,
+                            child: InkWell(
+                              onTap: onRemove,
+                              child: Container(
+                                padding: EdgeInsets.all(4.s),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                  size: 20.s,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(icon, size: 40.s, color: const Color(0xFF6366F1)),
-                        SizedBox(height: 8.s),
-                        Text(
-                          fileName ?? 'Document attached',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF6366F1), fontWeight: FontWeight.w500),
-                        ),
-                        TextButton(onPressed: onRemove, child: Text('Remove'.tran, style: TextStyle(color: Colors.red))),
-                      ],
-                    ),
-                  ))
+                        ],
+                      ),
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            icon,
+                            size: 40.s,
+                            color: const Color(0xFF6366F1),
+                          ),
+                          SizedBox(height: 8.s),
+                          Text(
+                            fileName ?? 'Document attached',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF6366F1),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: onRemove,
+                            child: Text(
+                              'Remove'.tran,
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
             : Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 40.s, color: theme.colorScheme.onSurfaceVariant),
+                    Icon(
+                      icon,
+                      size: 40.s,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                     SizedBox(height: 8.s),
                     Text(
                       label,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -198,8 +243,6 @@ class _EditAddressPageState extends State<EditAddressPage> {
       ),
     );
   }
-
-
 
   Widget _buildSectionTitle(String title) {
     return Padding(
@@ -240,7 +283,10 @@ class _EditAddressPageState extends State<EditAddressPage> {
         listener: (context, state) {
           state.maybeWhen(
             success: () {
-              ToastState.success.snackBar(context, 'Address updated successfully!'.tran);
+              ToastState.success.snackBar(
+                context,
+                'Address updated successfully!'.tran,
+              );
               context.pop(true);
             },
             error: (message) {
@@ -262,9 +308,11 @@ class _EditAddressPageState extends State<EditAddressPage> {
               children: [
                 _buildSectionTitle('COUNTRY OF RESIDENCE'),
                 DropdownButtonSearch<CountryModel>(
-                  asyncItems: () async => await _countryServices.fetchCountries(),
+                  asyncItems: () async =>
+                      await _countryServices.fetchCountries(),
                   onView: (c) => c?.name,
-                  onChanged: (country) => setState(() => _addressCountry = country),
+                  onChanged: (country) =>
+                      setState(() => _addressCountry = country),
                   label: 'Select country'.tran,
                   value: _addressCountry,
                 ),
@@ -275,8 +323,13 @@ class _EditAddressPageState extends State<EditAddressPage> {
                   controller: _cityController,
                   decoration: InputDecoration(
                     hintText: 'Enter City'.tran,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.s)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.s),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.s,
+                      vertical: 12.s,
+                    ),
                   ),
                 ),
                 SizedBox(height: 16.s),
@@ -287,8 +340,13 @@ class _EditAddressPageState extends State<EditAddressPage> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     hintText: 'Enter Full Address'.tran,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.s)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.s),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.s,
+                      vertical: 12.s,
+                    ),
                   ),
                 ),
                 SizedBox(height: 16.s),
@@ -299,8 +357,13 @@ class _EditAddressPageState extends State<EditAddressPage> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: 'Enter Postal Code'.tran,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.s)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 12.s),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.s),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.s,
+                      vertical: 12.s,
+                    ),
                   ),
                 ),
                 SizedBox(height: 24.s),

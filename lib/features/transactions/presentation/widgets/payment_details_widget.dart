@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:flutter/services.dart';
 import '../../data/models/payment_method_model.dart';
 
@@ -28,7 +28,10 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
     final RegExp exp = RegExp(r'(?<=[a-z])[A-Z]');
     return key
         .replaceAllMapped(exp, (m) => ' ${m.group(0)}')
-        .replaceFirstMapped(RegExp(r'^[a-z]'), (m) => m.group(0)!.toUpperCase());
+        .replaceFirstMapped(
+          RegExp(r'^[a-z]'),
+          (m) => m.group(0)!.toUpperCase(),
+        );
   }
 
   @override
@@ -41,14 +44,44 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     final detailIndex = _selectedIndex < list.length ? _selectedIndex : 0;
     final detail = list[detailIndex];
-    
-    // Filter out internal fields or empty values
-    final validEntries = detail.entries.where((e) {
-      if (e.key == 'paymentMethod' || e.key == 'id' || e.key == 'code' || e.key == 'date') return false;
-      if (e.value == null || e.value.toString().trim().isEmpty) return false;
-      return true;
-    }).toList();
-    
+
+    // Only the fields a depositor actually needs are shown. The admin payment
+    // method document also carries internal gateway configuration (callback
+    // URLs, fee tables, environment, currency rates) which must never be
+    // presented to a client as "payment details".
+    const displayableKeys = <String>{
+      'bankName',
+      'beneficiaryName',
+      'accountNumber',
+      'iban',
+      'swiftCode',
+      'currency',
+      'network',
+      'walletAddress',
+      'cardNumber',
+      'cardholderName',
+      'notes',
+    };
+
+    final validEntries = detail.entries
+        .where((e) {
+          if (!displayableKeys.contains(e.key)) return false;
+          if (e.value == null || e.value.toString().trim().isEmpty)
+            return false;
+          return true;
+        })
+        .map((e) {
+          // `currency` arrives as {id, name}; show its name.
+          final value = e.value;
+          if (value is Map) {
+            final name = value['name'] ?? value['code'];
+            return MapEntry(e.key, (name ?? '').toString());
+          }
+          return MapEntry(e.key, value.toString());
+        })
+        .where((e) => e.value.trim().isNotEmpty)
+        .toList();
+
     if (validEntries.isEmpty && list.length <= 1) {
       return const SizedBox.shrink();
     }
@@ -63,10 +96,10 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
             child: Text(
               'PAYMENT DETAILS',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
           if (list.length > 1) ...[
@@ -81,21 +114,31 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
                 child: DropdownButton<int>(
                   isExpanded: true,
                   value: detailIndex,
-                  icon: Icon(Icons.keyboard_arrow_down, color: colorScheme.onSurfaceVariant),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   items: List.generate(list.length, (index) {
                     final itemDetail = list[index];
                     String name = 'Option ${index + 1}';
                     if (itemDetail.containsKey('network')) {
                       name = itemDetail['network'].toString();
-                    } else if (itemDetail.containsKey('bankName')) name = itemDetail['bankName'].toString();
-                    else if (itemDetail.containsKey('apiName')) name = itemDetail['apiName'].toString();
-                    else if (itemDetail.containsKey('currency')) name = itemDetail['currency'].toString();
-                    
+                    } else if (itemDetail.containsKey('bankName')) {
+                      name = itemDetail['bankName'].toString();
+                    } else if (itemDetail['currency'] is Map) {
+                      name =
+                          (itemDetail['currency'] as Map)['name']?.toString() ??
+                          name;
+                    }
+
                     return DropdownMenuItem(
                       value: index,
                       child: Text(
                         name,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                     );
                   }),
@@ -137,7 +180,7 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
                   ),
                   itemBuilder: (context, index) {
                     final e = validEntries[index];
-                    final valueString = e.value.toString();
+                    final valueString = e.value;
                     return Padding(
                       padding: EdgeInsets.all(16.r),
                       child: Row(
@@ -146,7 +189,9 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
                           Container(
                             padding: EdgeInsets.all(8.r),
                             decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                              color: colorScheme.primaryContainer.withValues(
+                                alpha: 0.5,
+                              ),
                               borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: Icon(
@@ -181,11 +226,21 @@ class _PaymentDetailsWidgetState extends State<PaymentDetailsWidget> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.copy, size: 20.r, color: colorScheme.primary),
+                            icon: Icon(
+                              Icons.copy,
+                              size: 20.r,
+                              color: colorScheme.primary,
+                            ),
                             onPressed: () {
-                              Clipboard.setData(ClipboardData(text: valueString));
+                              Clipboard.setData(
+                                ClipboardData(text: valueString),
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${_formatKey(e.key)} copied to clipboard')),
+                                SnackBar(
+                                  content: Text(
+                                    '${_formatKey(e.key)} copied to clipboard',
+                                  ),
+                                ),
                               );
                             },
                           ),

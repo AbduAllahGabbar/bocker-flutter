@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:boker/features/auth/data/repository/user_access.dart';
+import '../../../../core/config/env/app_config.dart';
 import '../../../../core/config/language/language_manager.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -58,13 +60,23 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
     }
   }
 
-  String _formatTime(String dateStr) {
-    try {
-      final date = DateTime.parse(dateStr).toLocal();
-      return DateFormat('hh:mm a').format(date);
-    } catch (e) {
-      return '';
+  /// Human-readable age of a message, computed from its real timestamp.
+  String _relativeTime(String dateStr) {
+    final date = DateTime.tryParse(dateStr)?.toLocal();
+    if (date == null) return '';
+
+    final difference = DateTime.now().difference(date);
+    if (difference.inSeconds < 60) return 'just now'.tran;
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} ${'min ago'.tran}';
     }
+    if (difference.inHours < 24) {
+      return '${difference.inHours} ${'h ago'.tran}';
+    }
+    if (difference.inDays < 7) {
+      return '${difference.inDays} ${'d ago'.tran}';
+    }
+    return DateFormat('MMM dd, yyyy').format(date);
   }
 
   void _scrollToBottom() {
@@ -125,12 +137,25 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
   }
 
   void _sendReply(BuildContext context) {
-    if (_replyController.text.trim().isEmpty && _selectedFilePath == null) {
+    final desc = _replyController.text.trim();
+
+    if (desc.isEmpty && _selectedFilePath == null) {
+      return;
+    }
+
+    // An attachment never travels on its own - the backend stores the reply
+    // text as the message, so a file with no description arrives blank.
+    if (desc.isEmpty && _selectedFilePath != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please add a description for the attachment.'.tran),
+        ),
+      );
       return;
     }
 
     context.read<TicketDetailsCubit>().replyToTicket(
-      desc: _replyController.text.trim(),
+      desc: desc,
       filePath: _selectedFilePath,
       isImage: _isImage,
     );
@@ -211,10 +236,15 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             children: [
               _buildHeaderCard(ticket),
               Expanded(child: _buildChatList(ticket)),
-              _buildInputArea(
-                context,
-                state.maybeWhen(loading: (_) => true, orElse: () => false),
-              ),
+              // A closed ticket cannot be replied to - the backend refuses it,
+              // so the composer is replaced by a notice instead.
+              if (_isClosed(ticket))
+                _buildClosedNotice()
+              else
+                _buildInputArea(
+                  context,
+                  state.maybeWhen(loading: (_) => true, orElse: () => false),
+                ),
             ],
           );
         },
@@ -225,10 +255,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
   Widget _buildHeaderCard(Map<String, dynamic> ticket) {
     final categoryName = ticket['category']?['name']?.toString() ?? 'SUPPORT';
     final title = ticket['title']?.toString() ?? 'Ticket';
-    final status = ticket['status']?.toString().toLowerCase() ?? 'open';
     final dateStr = ticket['date']?.toString() ?? '';
     final formattedDate = _formatDate(dateStr);
-    final isOpen = status == 'open';
+    final isOpen = !_isClosed(ticket);
 
     return Container(
       margin: EdgeInsets.all(16.s),
@@ -332,12 +361,8 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
       controller: _scrollController,
       padding: EdgeInsets.symmetric(horizontal: 16.s),
       children: [
-        // System Greeting mock if there are no replies yet to match design
-        _buildAgentMessage(
-          "Hello! We've received your request. Our support team is currently reviewing it. We appreciate your patience as we investigate this further.",
-          dateStr,
-        ),
-        // Original ticket description (from user)
+        // Only real content is rendered: the ticket description the client
+        // submitted, then the actual replies from the backend.
         if (desc.isNotEmpty) _buildUserMessage(desc, null, dateStr),
         // Actual replies
         ...replies.map((reply) {
@@ -378,7 +403,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
               ),
               SizedBox(width: 8.s),
               Text(
-                'BrokerPro Support'.tran,
+                'Support'.tran,
                 style: TextStyle(
                   fontSize: 12.s,
                   fontWeight: FontWeight.w500,
@@ -386,7 +411,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                 ),
               ),
               Text(
-                '  •  2 hours ago', // Mock time like UI
+                '  •  ${_relativeTime(dateStr)}',
                 style: TextStyle(fontSize: 11.s, color: Colors.grey.shade500),
               ),
             ],
@@ -415,7 +440,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
   }
 
   Widget _buildUserMessage(String text, dynamic fileMap, String dateStr) {
-    final firstName = "My Company";
+    // The signed-in user's own name, not a placeholder.
+    final displayName =
+        UserAccess.user?.displayFullName ?? UserAccess.user?.email ?? '';
     return Padding(
       padding: EdgeInsets.only(bottom: 24.s),
       child: Column(
@@ -425,7 +452,9 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
-                'منذ 38 ثانية  •  $firstName', // Mock time like UI
+                displayName.isEmpty
+                    ? _relativeTime(dateStr)
+                    : '${_relativeTime(dateStr)}  •  $displayName',
                 style: TextStyle(fontSize: 11.s, color: Colors.grey.shade500),
               ),
               SizedBox(width: 8.s),
@@ -494,7 +523,7 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
               borderRadius: BorderRadius.circular(12.s),
               child: url != null
                   ? Image.network(
-                      'https://boker.egytag.com$url',
+                      AppConfig.resolveUrl(url)!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) =>
                           const Icon(Icons.broken_image, color: Colors.white),
@@ -533,6 +562,48 @@ class _TicketDetailsViewState extends State<_TicketDetailsView> {
                   Icon(Icons.download, color: Colors.white, size: 16.s),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// `status` is a plain string here, but other ticket endpoints wrap it as
+  /// `{code, name}` - both shapes are read the same way. Only an explicitly
+  /// closed ticket hides the composer; an unknown status keeps it, and the
+  /// backend has the final say.
+  bool _isClosed(Map<String, dynamic> ticket) {
+    final status = ticket['status'];
+    final value = status is Map
+        ? (status['code'] ?? status['name'])?.toString()
+        : status?.toString();
+    return value?.toLowerCase().contains('close') ?? false;
+  }
+
+  Widget _buildClosedNotice() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        left: 16.s,
+        right: 16.s,
+        top: 16.s,
+        bottom: 24.s,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock_outline, size: 16.s, color: Colors.grey.shade600),
+          SizedBox(width: 8.s),
+          Flexible(
+            child: Text(
+              'This ticket is closed and cannot be replied to.'.tran,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13.s, color: Colors.grey.shade600),
             ),
           ),
         ],

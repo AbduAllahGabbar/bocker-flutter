@@ -1,0 +1,14 @@
+# Copy to android/key.properties and fill in with your real release keystore
+# details. This file must NEVER be committed with real values - key.properties
+# is listed in .gitignore.
+#
+# storeFile is resolved relative to the `android/` directory.
+#
+# Alternatively, set these environment variables in CI instead of creating
+# key.properties:
+#   BOKER_KEYSTORE_PATH, BOKER_KEYSTORE_PASSWORD,
+#   BOKER_KEY_ALIAS, BOKER_KEY_PASSWORD
+storeFile=boker-release.jks
+storePassword=
+keyAlias=boker
+keyPassword=

@@ -1,7 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Required on Android 13 (API 33) and above to show notifications. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="boker"
+        android:label="Boker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -26,16 +28,41 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             
-            <!-- Deep linking -->
+            <!-- Hands incoming App Links to Flutter's router (go_router)
+                 instead of just starting the activity. Without this the
+                 intent arrives but the link's path/query never reaches the
+                 router, so affiliate parameters are lost. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="true" />
+
+            <!-- Deep linking / affiliate invitation links.
+                 Android requires every domain to be declared here, and each
+                 one must serve /.well-known/assetlinks.json for autoVerify to
+                 succeed. Add a <data> entry per additional portal domain. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="atm-crm.egytag.com" />
                 <data android:scheme="https" android:host="boker.egytag.com" />
+            </intent-filter>
+
+            <!-- Taps on an FCM notification are routed back into the app. -->
+            <intent-filter>
+                <action android:name="FLUTTER_NOTIFICATION_CLICK" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <!-- Default channel used for notifications received while the app is
+             not running. It must match the channel created in
+             lib/core/services/notifications/push_notifications_service.dart -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="boker_default_channel" />
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -36,15 +36,11 @@ class _CreateTicketViewState extends State<_CreateTicketView> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
 
-  final List<Map<String, dynamic>> _categories = [
-    {
-      "_id": "6a3b5a3cad63101baaa36c5c",
-      "name": "Payment & Transactions",
-      "id": 1,
-    },
-    {"_id": "6a3b5a3cad63101baaa36c5d", "name": "Technical Support", "id": 2},
-    {"_id": "6a3b5a3cad63101baaa36c5e", "name": "Account Security", "id": 3},
-  ];
+  /// Loaded from the backend when the page opens - never hardcoded, so the
+  /// list always matches what the help desk actually accepts.
+  List<Map<String, dynamic>> _categories = const [];
+  bool _loadingCategories = true;
+  String? _categoriesError;
 
   Map<String, dynamic>? _selectedCategory;
   String? _selectedFilePath;
@@ -53,7 +49,31 @@ class _CreateTicketViewState extends State<_CreateTicketView> {
   @override
   void initState() {
     super.initState();
-    _selectedCategory = _categories.first;
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final cubit = context.read<TicketsCubit>();
+    setState(() {
+      _loadingCategories = true;
+      _categoriesError = null;
+    });
+
+    try {
+      final categories = await cubit.fetchTicketCategories();
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _selectedCategory = categories.isEmpty ? null : categories.first;
+        _loadingCategories = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingCategories = false;
+        _categoriesError = 'Failed to load categories'.tran;
+      });
+    }
   }
 
   @override
@@ -109,11 +129,29 @@ class _CreateTicketViewState extends State<_CreateTicketView> {
   }
 
   void _submitTicket(BuildContext context) {
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Please select a category'.tran)));
+      return;
+    }
+
     if (_titleController.text.trim().isEmpty ||
         _descController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Please fill all fields'.tran)));
+      return;
+    }
+
+    // An attachment never travels on its own - it is filed against the
+    // description, so the description is required as soon as one is picked.
+    if (_selectedFilePath != null && _descController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please add a description for the attachment.'.tran),
+        ),
+      );
       return;
     }
 
@@ -213,28 +251,28 @@ class _CreateTicketViewState extends State<_CreateTicketView> {
                     borderRadius: BorderRadius.circular(12.s),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<Map<String, dynamic>>(
-                      value: _selectedCategory,
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.grey.shade600,
-                      ),
-                      isExpanded: true,
-                      items: _categories.map((cat) {
-                        return DropdownMenuItem<Map<String, dynamic>>(
-                          value: cat,
-                          child: Text(cat['name'].toString()),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          if (val != null) _selectedCategory = val;
-                        });
-                      },
-                    ),
-                  ),
+                  child: _buildCategoryDropdown(),
                 ),
+                if (_categoriesError != null) ...[
+                  SizedBox(height: 8.s),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _categoriesError!,
+                          style: TextStyle(
+                            fontSize: 12.s,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loadCategories,
+                        child: Text('Retry'.tran),
+                      ),
+                    ],
+                  ),
+                ],
                 SizedBox(height: 20.s),
 
                 _buildLabel('Ticket Title'.tran),
@@ -371,6 +409,53 @@ class _CreateTicketViewState extends State<_CreateTicketView> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    if (_loadingCategories) {
+      return SizedBox(
+        height: 48.s,
+        child: Row(
+          children: [
+            SizedBox(
+              height: 16.s,
+              width: 16.s,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12.s),
+            Text(
+              'Loading categories...'.tran,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14.s),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<Map<String, dynamic>>(
+        value: _selectedCategory,
+        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600),
+        isExpanded: true,
+        hint: Text(
+          'Select a category'.tran,
+          style: TextStyle(color: Colors.grey.shade400),
+        ),
+        items: _categories.map((cat) {
+          return DropdownMenuItem<Map<String, dynamic>>(
+            value: cat,
+            child: Text(cat['name'].toString()),
+          );
+        }).toList(),
+        onChanged: _categories.isEmpty
+            ? null
+            : (val) {
+                setState(() {
+                  if (val != null) _selectedCategory = val;
+                });
+              },
       ),
     );
   }

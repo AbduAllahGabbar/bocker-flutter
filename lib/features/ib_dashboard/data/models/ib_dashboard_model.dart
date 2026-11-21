@@ -16,7 +16,11 @@ class IbDashboardResponse {
   factory IbDashboardResponse.fromJson(Map<String, dynamic> json) {
     return IbDashboardResponse(
       done: json['done'] ?? false,
-      list: (json['list'] as List?)?.map((e) => IbReferralItem.fromJson(e)).toList() ?? [],
+      list:
+          (json['list'] as List?)
+              ?.map((e) => IbReferralItem.fromJson(e))
+              .toList() ??
+          [],
       count: json['count'] ?? 0,
       totals: IbDashboardTotals.fromJson(json['totals'] ?? {}),
       kpis: IbDashboardKpis.fromJson(json['kpis'] ?? {}),
@@ -60,8 +64,9 @@ class IbReferralItem {
   });
 
   factory IbReferralItem.fromJson(Map<String, dynamic> json) {
-    num parseNum(dynamic val) => val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
-    
+    num parseNum(dynamic val) =>
+        val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
+
     return IbReferralItem(
       id: parseNum(json['id']),
       name: json['name']?.toString(),
@@ -104,7 +109,8 @@ class IbDashboardTotals {
   });
 
   factory IbDashboardTotals.fromJson(Map<String, dynamic> json) {
-    num parseNum(dynamic val) => val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
+    num parseNum(dynamic val) =>
+        val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
     return IbDashboardTotals(
       balance: parseNum(json['balance']),
       credit: parseNum(json['credit']),
@@ -134,7 +140,8 @@ class IbDashboardKpis {
   });
 
   factory IbDashboardKpis.fromJson(Map<String, dynamic> json) {
-    num parseNum(dynamic val) => val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
+    num parseNum(dynamic val) =>
+        val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
     return IbDashboardKpis(
       directReferrals: parseNum(json['directReferrals']),
       totalReferrals: parseNum(json['totalReferrals']),

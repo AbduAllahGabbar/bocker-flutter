@@ -13,18 +13,12 @@ class LayoutView extends StatefulWidget {
 }
 
 class _LayoutViewState extends State<LayoutView> {
-  String _getCurrentPage() {
-    final path = widget.navigationShell.shellRouteContext.routerState.uri.path;
-    final name = path.substring(1);
-    return name;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
       drawer: const SideMenuList(),
-      body:  widget.navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: BottomNavBar(
         currentIndex: widget.navigationShell.currentIndex < 5
             ? widget.navigationShell.currentIndex

@@ -12,7 +12,11 @@ class IbTransactionResponse {
   factory IbTransactionResponse.fromJson(Map<String, dynamic> json) {
     return IbTransactionResponse(
       done: json['done'] ?? false,
-      list: (json['list'] as List?)?.map((e) => IbTransaction.fromJson(e)).toList() ?? [],
+      list:
+          (json['list'] as List?)
+              ?.map((e) => IbTransaction.fromJson(e))
+              .toList() ??
+          [],
       count: json['count'] ?? 0,
     );
   }
@@ -42,18 +46,27 @@ class IbTransaction {
   });
 
   factory IbTransaction.fromJson(Map<String, dynamic> json) {
-    num parseNum(dynamic val) => val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
-    
+    num parseNum(dynamic val) =>
+        val is num ? val : num.tryParse(val?.toString() ?? '') ?? 0;
+
     return IbTransaction(
       sId: json['_id'],
       id: int.tryParse(json['id']?.toString() ?? ''),
       amount: parseNum(json['amount']),
       comment: json['comment'],
       date: json['date'],
-      type: json['type'] != null ? IbTransactionType.fromJson(json['type']) : null,
-      operation: json['operation'] != null ? IbTransactionType.fromJson(json['operation']) : null,
-      user: json['user'] != null ? IbTransactionUser.fromJson(json['user']) : null,
-      addUserInfo: json['addUserInfo'] != null ? IbTransactionUser.fromJson(json['addUserInfo']) : null,
+      type: json['type'] != null
+          ? IbTransactionType.fromJson(json['type'])
+          : null,
+      operation: json['operation'] != null
+          ? IbTransactionType.fromJson(json['operation'])
+          : null,
+      user: json['user'] != null
+          ? IbTransactionUser.fromJson(json['user'])
+          : null,
+      addUserInfo: json['addUserInfo'] != null
+          ? IbTransactionUser.fromJson(json['addUserInfo'])
+          : null,
     );
   }
 }

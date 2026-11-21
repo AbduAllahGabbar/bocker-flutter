@@ -29,9 +29,7 @@ class MyElevatedSmall extends StatelessWidget {
           backgroundColor: backgroundColor ?? colorScheme.primary,
           foregroundColor: foregroundColor ?? colorScheme.onPrimary,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 1,
           textStyle: theme.textTheme.labelSmall?.copyWith(
             fontWeight: FontWeight.w600,
@@ -53,4 +51,3 @@ class MyElevatedSmall extends StatelessWidget {
     );
   }
 }
-

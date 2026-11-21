@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 
 import '../../../../core/componants/async_dropdownmenu.dart';
 import '../../../../core/componants/my_elevated_button.dart';
@@ -75,9 +75,7 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
   }
 
   /// Shows a bottom-sheet letting the user choose between Camera and Gallery.
-  Future<void> _pickImage({
-    required Function(String path) onPicked,
-  }) async {
+  Future<void> _pickImage({required Function(String path) onPicked}) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -156,8 +154,13 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
       );
       return;
     }
-    if(_frontSidePath==null){
-      ToastState.error.snackBar(context, _documentType == 'Passport' ? 'Please upload passport document'.tran : 'Please upload front side of document'.tran);
+    if (_frontSidePath == null) {
+      ToastState.error.snackBar(
+        context,
+        _documentType == 'Passport'
+            ? 'Please upload passport document'.tran
+            : 'Please upload front side of document'.tran,
+      );
       return;
     }
 
@@ -231,7 +234,9 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSectionTitle('DOES THE DOCUMENT HAVE AN EXPIRATION DATE?'),
+                  _buildSectionTitle(
+                    'DOES THE DOCUMENT HAVE AN EXPIRATION DATE?',
+                  ),
                   SizedBox(height: 12.h),
                   Row(
                     children: [
@@ -332,17 +337,20 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                   ),
                   SizedBox(height: 24.h),
 
-                  _buildSectionTitle(_documentType == 'Passport' ? 'PASSPORT' : 'FRONT SIDE'),
+                  _buildSectionTitle(
+                    _documentType == 'Passport' ? 'PASSPORT' : 'FRONT SIDE',
+                  ),
                   SizedBox(height: 12.h),
                   _buildUploadBox(
                     context: context,
-                    label: _documentType == 'Passport' ? 'Tap to upload passport photo' : 'Tap to upload front photo',
+                    label: _documentType == 'Passport'
+                        ? 'Tap to upload passport photo'
+                        : 'Tap to upload front photo',
                     icon: Icons.camera_alt_outlined,
                     filePath: _frontSidePath,
                     isImage: true,
-                    onTap: () => _pickImage(
-                      onPicked: (path) => _frontSidePath = path,
-                    ),
+                    onTap: () =>
+                        _pickImage(onPicked: (path) => _frontSidePath = path),
                     onRemove: () => setState(() => _frontSidePath = null),
                   ),
                   SizedBox(height: 24.h),
@@ -356,9 +364,8 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                       icon: Icons.camera_alt_outlined,
                       filePath: _backSidePath,
                       isImage: true,
-                      onTap: () => _pickImage(
-                        onPicked: (path) => _backSidePath = path,
-                      ),
+                      onTap: () =>
+                          _pickImage(onPicked: (path) => _backSidePath = path),
                       onRemove: () => setState(() => _backSidePath = null),
                     ),
                     SizedBox(height: 24.h),
@@ -433,7 +440,10 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
                   ),
                   SizedBox(height: 24.h),
 
-                  _buildSectionTitle('PROOF OF ADDRESS DOCUMENT', isRequired: false),
+                  _buildSectionTitle(
+                    'PROOF OF ADDRESS DOCUMENT',
+                    isRequired: false,
+                  ),
                   _buildUploadBox(
                     context: context,
                     label: 'Add proof of address document',
@@ -568,141 +578,143 @@ class _IdentityVerificationPageState extends State<IdentityVerificationPage> {
         ),
         child: filePath != null
             ? (isImage
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(11),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Image.file(
-                            File(filePath),
-                            fit: BoxFit.cover,
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Image.file(
+                              File(filePath),
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: 40.h,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.6),
-                                  Colors.transparent,
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 40.h,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.transparent,
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 8.h,
-                          left: 8.w,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 10.w,
-                              vertical: 4.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.edit,
-                                  color: Colors.white,
-                                  size: 12.h,
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  'Tap to change'.tran,
-                                  style: TextStyle(
+                          Positioned(
+                            bottom: 8.h,
+                            left: 8.w,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.65),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.edit,
                                     color: Colors.white,
+                                    size: 12.h,
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    'Tap to change'.tran,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.h,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4.h,
+                            right: 4.w,
+                            child: IconButton(
+                              icon: Container(
+                                padding: EdgeInsets.all(4.h),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16.h,
+                                ),
+                              ),
+                              onPressed: onRemove,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Padding(
+                      padding: EdgeInsets.all(12.h),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(10.h),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF6366F1,
+                              ).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.check_circle_outline,
+                              color: const Color(0xFF6366F1),
+                              size: 24.h,
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  fileName ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.h,
+                                  ),
+                                ),
+                                SizedBox(height: 4.h),
+                                Text(
+                                  'Tap to change file'.tran,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
                                     fontSize: 11.h,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        Positioned(
-                          top: 4.h,
-                          right: 4.w,
-                          child: IconButton(
-                            icon: Container(
-                              padding: EdgeInsets.all(4.h),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16.h,
-                              ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              color: theme.colorScheme.error,
+                              size: 20.h,
                             ),
                             onPressed: onRemove,
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Padding(
-                    padding: EdgeInsets.all(12.h),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(10.h),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check_circle_outline,
-                            color: const Color(0xFF6366F1),
-                            size: 24.h,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                fileName ?? '',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.h,
-                                ),
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                'Tap to change file'.tran,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontSize: 11.h,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: theme.colorScheme.error,
-                            size: 20.h,
-                          ),
-                          onPressed: onRemove,
-                        ),
-                      ],
-                    ),
-                  ))
+                        ],
+                      ),
+                    ))
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

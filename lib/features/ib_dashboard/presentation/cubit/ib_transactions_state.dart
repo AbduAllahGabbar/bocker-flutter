@@ -5,9 +5,9 @@ class IbTransactionsState extends Equatable {
   final bool isLoading;
   final bool isLoadingMore;
   final String? error;
-  
+
   final IbTransactionResponse? transactionData;
-  
+
   final String typeCode; // 'repate' or 'bonus'
   final String searchQuery;
   final int pageNumber;
@@ -47,13 +47,13 @@ class IbTransactionsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        typeCode,
-        isLoading,
-        isLoadingMore,
-        error,
-        transactionData,
-        searchQuery,
-        pageNumber,
-        hasReachedMax,
-      ];
+    typeCode,
+    isLoading,
+    isLoadingMore,
+    error,
+    transactionData,
+    searchQuery,
+    pageNumber,
+    hasReachedMax,
+  ];
 }

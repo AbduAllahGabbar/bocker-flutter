@@ -46,9 +46,6 @@ class RouterChecker {
   }
 
   static String? ifNotProduct(BuildContext context, GoRouterState state) {
-    final extra = state.extra;
-
-
     return null;
   }
 

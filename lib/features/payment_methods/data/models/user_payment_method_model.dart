@@ -5,11 +5,7 @@ class CurrencyModel {
   final num numId;
   final String name;
 
-  CurrencyModel({
-    required this.id,
-    required this.numId,
-    required this.name,
-  });
+  CurrencyModel({required this.id, required this.numId, required this.name});
 
   factory CurrencyModel.fromJson(Map<String, dynamic> json) {
     return CurrencyModel(
@@ -23,7 +19,7 @@ class CurrencyModel {
 class UserPaymentMethodModel {
   final PaymentMethodModel paymentMethod;
   final int code;
-  
+
   // Bank fields
   final String? beneficiaryName;
   final String? accountNumber;
@@ -62,7 +58,9 @@ class UserPaymentMethodModel {
       beneficiaryName: json['beneficiaryName'],
       accountNumber: json['accountNumber'],
       swiftCode: json['swiftCode'],
-      currency: json['currency'] != null ? CurrencyModel.fromJson(json['currency']) : null,
+      currency: json['currency'] != null
+          ? CurrencyModel.fromJson(json['currency'])
+          : null,
       notes: json['notes'],
       cardNumber: json['cardNumber'],
       cardholderName: json['cardholderName'],

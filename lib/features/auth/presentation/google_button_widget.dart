@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 
 import '../../../core/config/language/language_manager.dart';
 import '../cubit/auth_cubit.dart';
@@ -14,7 +14,7 @@ class GoogleButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    return    BlocBuilder<AuthCubit, AuthState>(
+    return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         final isLoading = state.maybeWhen(
           loading: () => true,
@@ -23,9 +23,7 @@ class GoogleButtonWidget extends StatelessWidget {
         return AuthButton(
           res: res,
           text: 'Sign in with Google'.tran,
-          onPressed: isLoading
-              ? null
-              : _handleGoogleSignIn,
+          onPressed: isLoading ? null : _handleGoogleSignIn,
           isLoading: isLoading,
           backgroundColor: colorScheme.surface,
           textColor: colorScheme.onSurface,
@@ -35,10 +33,12 @@ class GoogleButtonWidget extends StatelessWidget {
       },
     );
   }
+
   void _handleGoogleSignIn() {
     // context.read<AuthCubit>().signInWithGoogle(isSignIn: false);
   }
 }
+
 class GoogleLogoIcon extends StatelessWidget {
   final double size;
 

@@ -44,7 +44,9 @@ class MyTextButton extends StatelessWidget {
         label: Text(title),
         style: TextButton.styleFrom(
           foregroundColor: textColor ?? theme.colorScheme.primary,
-          padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding:
+              padding ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           textStyle: theme.textTheme.labelLarge?.copyWith(
             fontSize: fontSize,
             fontWeight: fontWeight,
@@ -57,7 +59,8 @@ class MyTextButton extends StatelessWidget {
       onPressed: isLoading ? null : onPressed,
       style: TextButton.styleFrom(
         foregroundColor: textColor ?? theme.colorScheme.primary,
-        padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding:
+            padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         textStyle: theme.textTheme.labelLarge?.copyWith(
           fontSize: fontSize,
           fontWeight: fontWeight,
@@ -78,4 +81,3 @@ class MyTextButton extends StatelessWidget {
     );
   }
 }
-

@@ -5,19 +5,8 @@ import '../../core/config/local/cache_service.dart';
 import 'app_state.dart';
 
 class AppCubit extends Cubit<AppState> {
-
-  AppCubit({
-    required String languageCode,
-    bool isDarkMode = false,
-  }) :
-       super(
-         AppState(
-           languageCode: languageCode,
-           isDarkMode: isDarkMode,
-         ),
-       );
-
-
+  AppCubit({required String languageCode, bool isDarkMode = false})
+    : super(AppState(languageCode: languageCode, isDarkMode: isDarkMode));
 
   void changeThemeMode(ThemeMode mode) {
     emit(state.copyWith(isDarkMode: mode == ThemeMode.dark));
@@ -28,7 +17,6 @@ class AppCubit extends Cubit<AppState> {
     AppCache.setLanguage(language.value);
   }
 
-  String get languageLocaleCode =>LanguageType.fromValue( state.languageCode).locale.toLanguageTag();
-
-
+  String get languageLocaleCode =>
+      LanguageType.fromValue(state.languageCode).locale.toLanguageTag();
 }

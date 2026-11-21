@@ -6,10 +6,10 @@ class IbDashboardState extends Equatable {
   final bool isLoading;
   final bool isLoadingMore;
   final String? error;
-  
+
   final IbDashboardResponse? dashboardData;
   final UserModel? user;
-  
+
   final String searchQuery;
   final int pageNumber;
   final bool hasReachedMax;
@@ -49,13 +49,13 @@ class IbDashboardState extends Equatable {
 
   @override
   List<Object?> get props => [
-        isLoading,
-        isLoadingMore,
-        error,
-        dashboardData,
-        user,
-        searchQuery,
-        pageNumber,
-        hasReachedMax,
-      ];
+    isLoading,
+    isLoadingMore,
+    error,
+    dashboardData,
+    user,
+    searchQuery,
+    pageNumber,
+    hasReachedMax,
+  ];
 }

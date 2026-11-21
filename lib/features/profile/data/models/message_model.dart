@@ -45,10 +45,7 @@ class UserModel {
   final int id;
   final String name;
 
-  UserModel({
-    required this.id,
-    required this.name,
-  });
+  UserModel({required this.id, required this.name});
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -86,9 +83,9 @@ class MessageModel {
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     final msgTypeStr = json['messageType']?.toString();
     final messageType = MessageType.fromString(msgTypeStr);
-    
+
     final rawMessage = json['message'];
-    
+
     String? textContent;
     FileModel? fileContent;
 

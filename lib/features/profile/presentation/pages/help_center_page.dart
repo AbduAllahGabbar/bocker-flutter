@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/config/routes/routes_manager.dart';
@@ -17,9 +17,8 @@ class HelpCenterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => TicketsCubit(TicketsRepository(
-        dio: di<Dio>(),
-      ))..fetchTickets(true),
+      create: (context) =>
+          TicketsCubit(TicketsRepository(dio: di<Dio>()))..fetchTickets(true),
       child: const _HelpCenterView(),
     );
   }
@@ -39,13 +38,16 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
     try {
       final date = DateTime.parse(dateStr).toLocal();
       final now = DateTime.now();
-      
-      final datePart = (date.year == now.year && date.month == now.month && date.day == now.day)
+
+      final datePart =
+          (date.year == now.year &&
+              date.month == now.month &&
+              date.day == now.day)
           ? 'Today'
           : DateFormat('MMM dd, yyyy').format(date);
-          
+
       final timePart = DateFormat('hh:mm a').format(date);
-      
+
       return '$datePart • $timePart';
     } catch (e) {
       return 'Unknown';
@@ -99,7 +101,9 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
                 return state.maybeWhen(
                   initial: () => Center(child: CircularProgressIndicator()),
                   loading: () => Center(child: CircularProgressIndicator()),
-                  error: (message) => Center(child: Text(message, style: TextStyle(color: Colors.red))),
+                  error: (message) => Center(
+                    child: Text(message, style: TextStyle(color: Colors.red)),
+                  ),
                   success: (tickets) {
                     if (tickets.isEmpty) {
                       return Center(
@@ -114,10 +118,16 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
                         context.read<TicketsCubit>().fetchTickets(_isOpenTab);
                       },
                       child: ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                        padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 8.s).copyWith(bottom: 80.s),
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.s,
+                          vertical: 8.s,
+                        ).copyWith(bottom: 80.s),
                         itemCount: tickets.length,
-                        separatorBuilder: (context, index) => SizedBox(height: 16.s),
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 16.s),
                         itemBuilder: (context, index) {
                           final item = tickets[index] as Map<String, dynamic>;
                           return _buildTicketCard(item);
@@ -168,7 +178,7 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
                     color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -191,8 +201,11 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
     final status = item['status']?.toString().toLowerCase() ?? 'open';
     final dateStr = item['date']?.toString() ?? '';
     final formattedDate = _formatDate(dateStr);
-    final isReplied = item['isReplied'] == true;
-    final repliesCount = isReplied ? 1 : 0; // Using a dummy count based on isReplied as per plan
+    // Real number of replies on the ticket. The list endpoint does not always
+    // embed replyList; when it does not, the badge is hidden rather than
+    // showing an invented count.
+    final replyList = item['replyList'];
+    final int? repliesCount = replyList is List ? replyList.length : null;
 
     final isOpen = status == 'open';
     final ticketId = item['id'] as int?;
@@ -211,127 +224,148 @@ class _HelpCenterViewState extends State<_HelpCenterView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                categoryName.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11.s,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).primaryColor,
-                  letterSpacing: 0.5,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  categoryName.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11.s,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).primaryColor,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.s, vertical: 4.s),
-                decoration: BoxDecoration(
-                  color: isOpen ? const Color(0xFFE6F4EA) : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(12.s),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isOpen ? Icons.radio_button_unchecked : Icons.check_circle_outline,
-                      size: 12.s,
-                      color: isOpen ? Theme.of(context).primaryColor : Colors.grey.shade600,
-                    ),
-                    SizedBox(width: 4.s),
-                    Text(
-                      isOpen ? 'Open'.tran : 'Closed',
-                      style: TextStyle(
-                        fontSize: 12.s,
-                        fontWeight: FontWeight.w600,
-                        color: isOpen ? Theme.of(context).primaryColor : Colors.grey.shade600,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.s,
+                    vertical: 4.s,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isOpen
+                        ? const Color(0xFFE6F4EA)
+                        : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12.s),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isOpen
+                            ? Icons.radio_button_unchecked
+                            : Icons.check_circle_outline,
+                        size: 12.s,
+                        color: isOpen
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey.shade600,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.s),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 15.s,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF1F2937),
+                      SizedBox(width: 4.s),
+                      Text(
+                        isOpen ? 'Open'.tran : 'Closed',
+                        style: TextStyle(
+                          fontSize: 12.s,
+                          fontWeight: FontWeight.w600,
+                          color: isOpen
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey.shade600,
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4.s),
-                    Text(
-                      code.startsWith('#') ? code : '#$code',
-                      style: TextStyle(
-                        fontSize: 12.s,
-                        color: Colors.grey.shade500,
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.s),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15.s,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF1F2937),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 12.s),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.s, vertical: 4.s),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8.s),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.chat_bubble_outline, size: 14.s, color: Colors.grey.shade700),
-                    SizedBox(width: 6.s),
-                    Text(
-                      repliesCount.toString(),
-                      style: TextStyle(
-                        fontSize: 12.s,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1F2937),
+                      SizedBox(height: 4.s),
+                      Text(
+                        code.startsWith('#') ? code : '#$code',
+                        style: TextStyle(
+                          fontSize: 12.s,
+                          color: Colors.grey.shade500,
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 12.s),
+                if (repliesCount != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.s,
+                      vertical: 4.s,
                     ),
-                  ],
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8.s),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 14.s,
+                          color: Colors.grey.shade700,
+                        ),
+                        SizedBox(width: 6.s),
+                        Text(
+                          repliesCount.toString(),
+                          style: TextStyle(
+                            fontSize: 12.s,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 16.s),
+            Divider(color: Colors.grey.shade100, height: 1),
+            SizedBox(height: 12.s),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Updated $formattedDate',
+                  style: TextStyle(fontSize: 11.s, color: Colors.grey.shade600),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.s),
-          Divider(color: Colors.grey.shade100, height: 1),
-          SizedBox(height: 12.s),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Updated $formattedDate',
-                style: TextStyle(
-                  fontSize: 11.s,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              if (isOpen && ticketId != null)
-                _CloseTicketButton(
-                  ticketId: ticketId,
-                  onClosed: () {
-                    context.read<TicketsCubit>().fetchTickets(_isOpenTab);
-                  },
-                )
-              else
-                Icon(Icons.chevron_right, size: 20.s, color: Colors.grey.shade400),
-            ],
-          ),
-        ],
+                if (isOpen && ticketId != null)
+                  _CloseTicketButton(
+                    ticketId: ticketId,
+                    onClosed: () {
+                      context.read<TicketsCubit>().fetchTickets(_isOpenTab);
+                    },
+                  )
+                else
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20.s,
+                    color: Colors.grey.shade400,
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -351,33 +385,37 @@ class _CloseTicketButtonState extends State<_CloseTicketButton> {
   Future<void> _handleClose() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) =>
-          AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-            title: const Text(
-                'Close Ticket', style: TextStyle(fontWeight: FontWeight.w600)),
-            content: const Text(
-                'Are you sure you want to close this ticket? This action cannot be undone.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: Text(
-                    'Cancel', style: TextStyle(color: Colors.grey.shade600)),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade400,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
-                ),
-                child: const Text('Close Ticket'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Close Ticket',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
+          'Are you sure you want to close this ticket? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Close Ticket'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true || !mounted) return;
@@ -385,7 +423,8 @@ class _CloseTicketButtonState extends State<_CloseTicketButton> {
     setState(() => _isLoading = true);
 
     final success = await context.read<TicketsCubit>().closeTicket(
-        widget.ticketId);
+      widget.ticketId,
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -397,7 +436,8 @@ class _CloseTicketButtonState extends State<_CloseTicketButton> {
           backgroundColor: Colors.green.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       widget.onClosed();
@@ -408,7 +448,8 @@ class _CloseTicketButtonState extends State<_CloseTicketButton> {
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -453,6 +494,4 @@ class _CloseTicketButtonState extends State<_CloseTicketButton> {
       ),
     );
   }
-
-
 }

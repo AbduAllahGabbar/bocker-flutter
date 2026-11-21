@@ -19,6 +19,11 @@ class TicketsCubit extends Cubit<TicketsState> {
     }
   }
 
+  /// Categories for the create-ticket form. Returned rather than emitted, so
+  /// loading them never disturbs the create/list states this cubit drives.
+  Future<List<Map<String, dynamic>>> fetchTicketCategories() =>
+      _repository.fetchTicketCategories();
+
   Future<void> createTicket({
     required Map<String, dynamic> category,
     required String title,
@@ -48,13 +53,16 @@ class TicketsCubit extends Cubit<TicketsState> {
           },
         );
 
-        if (state.maybeWhen(createError: (_) => true, orElse: () => false)) return;
+        if (state.maybeWhen(createError: (_) => true, orElse: () => false))
+          return;
       }
 
       await _repository.addTicket(payload);
       emit(const TicketsState.createSuccess());
     } catch (e) {
-      emit(TicketsState.createError("Failed to create ticket: ${e.toString()}"));
+      emit(
+        TicketsState.createError("Failed to create ticket: ${e.toString()}"),
+      );
     }
   }
 

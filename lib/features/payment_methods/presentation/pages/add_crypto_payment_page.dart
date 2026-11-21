@@ -1,32 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/di/di_container.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/componants/toast.dart';
 import '../../../transactions/data/models/payment_method_model.dart';
+import '../../data/models/user_payment_method_model.dart';
 import '../cubit/add_payment_method_cubit.dart';
 import '../cubit/add_payment_method_state.dart';
 
 class AddCryptoPaymentPage extends StatelessWidget {
   final PaymentMethodModel method;
-  
-  const AddCryptoPaymentPage({super.key, required this.method});
+
+  /// When set, saving replaces this existing method (the backend has no
+  /// update endpoint - see PaymentMethodsRepository.replacePaymentMethod).
+  final UserPaymentMethodModel? replacing;
+
+  const AddCryptoPaymentPage({super.key, required this.method, this.replacing});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => DI.initAddPaymentMethod(),
-      child: _AddCryptoPaymentView(method: method),
+      child: _AddCryptoPaymentView(method: method, replacing: replacing),
     );
   }
 }
 
 class _AddCryptoPaymentView extends StatefulWidget {
   final PaymentMethodModel method;
-  
-  const _AddCryptoPaymentView({required this.method});
+  final UserPaymentMethodModel? replacing;
+
+  const _AddCryptoPaymentView({required this.method, this.replacing});
 
   @override
   State<_AddCryptoPaymentView> createState() => _AddCryptoPaymentViewState();
@@ -35,6 +41,13 @@ class _AddCryptoPaymentView extends StatefulWidget {
 class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
   final _addressController = TextEditingController();
   final _aliasController = TextEditingController(); // Optional, but in UI
+
+  @override
+  void initState() {
+    super.initState();
+    // Edit flow: prefill with the method being replaced.
+    _addressController.text = widget.replacing?.walletAddress ?? '';
+  }
 
   @override
   void dispose() {
@@ -51,10 +64,7 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
 
     final code = widget.method.code.toLowerCase();
     Map<String, dynamic> data = {
-      "paymentMethod": {
-        "code": widget.method.code,
-        "name": widget.method.name,
-      },
+      "paymentMethod": {"code": widget.method.code, "name": widget.method.name},
       "walletAddress": _addressController.text.trim(),
     };
 
@@ -64,29 +74,35 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
       data["network"] = "ERC 20";
     }
 
-    context.read<AddPaymentMethodCubit>().submitPaymentMethod(data);
+    context.read<AddPaymentMethodCubit>().submitPaymentMethod(
+      data,
+      replacingCode: widget.replacing?.code,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final code = widget.method.code.toLowerCase();
-    
+
     String title = 'Add Crypto Wallet';
     String networkName = '';
     String warningMessage = '';
 
     if (code == 'btc') {
       title = 'Add BTC Payment Details';
-      warningMessage = 'Please double-check your address. Transfers to incorrect addresses cannot be reversed.';
+      warningMessage =
+          'Please double-check your address. Transfers to incorrect addresses cannot be reversed.';
     } else if (code == 'erc') {
       title = 'Add USDT Wallet';
       networkName = 'ERC 20';
-      warningMessage = 'Sending funds to an incompatible network address will result in permanent loss of assets.';
+      warningMessage =
+          'Sending funds to an incompatible network address will result in permanent loss of assets.';
     } else if (code == 'trc') {
       title = 'USDT Wallet';
       networkName = 'TRC 20 (Tron)';
-      warningMessage = 'Only send USDT to this address via the TRC20 network. Sending other assets or using a different network will result in permanent loss.';
+      warningMessage =
+          'Only send USDT to this address via the TRC20 network. Sending other assets or using a different network will result in permanent loss.';
     }
 
     return Scaffold(
@@ -98,17 +114,11 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
         title: Text(
           widget.method.name,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
-            onPressed: () {},
-          )
-        ],
       ),
       body: BlocConsumer<AddPaymentMethodCubit, AddPaymentMethodState>(
         listener: (context, state) {
@@ -123,7 +133,12 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
           return Stack(
             children: [
               ListView(
-                padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
+                padding: EdgeInsets.only(
+                  left: 20.w,
+                  right: 20.w,
+                  top: 20.h,
+                  bottom: 100.h,
+                ),
                 children: [
                   Text(
                     'ADD PAYMENT METHOD',
@@ -138,19 +153,19 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    code == 'btc' 
+                    code == 'btc'
                         ? 'Enter your Bitcoin wallet address to receive withdrawals.'
                         : 'Securely link your wallet for seamless transfers.',
                     style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                   SizedBox(height: 32.h),
-                  
+
                   if (networkName.isNotEmpty) ...[
                     _buildLabel('Network', context),
                     Container(
@@ -180,17 +195,25 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
                     SizedBox(height: 8.h),
                     Text(
                       'Please ensure your wallet supports the $networkName network.',
-                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13.s),
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 13.s,
+                      ),
                     ),
                     SizedBox(height: 24.h),
                   ],
 
-                  _buildLabel(code == 'btc' ? 'Bitcoin Wallet Address' : 'Wallet Address', context),
+                  _buildLabel(
+                    code == 'btc' ? 'Bitcoin Wallet Address' : 'Wallet Address',
+                    context,
+                  ),
                   TextField(
                     controller: _addressController,
                     decoration: InputDecoration(
                       hintText: code == 'btc' ? 'e.g. 1A1zP1eP...' : '0x...',
-                      prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+                      prefixIcon: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                      ),
                       suffixIcon: const Icon(Icons.qr_code_scanner),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
@@ -198,11 +221,14 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
                     ),
                   ),
                   SizedBox(height: 8.h),
-                  
+
                   if (code == 'btc') ...[
                     Text(
                       'Please double-check your address. Transfers to incorrect addresses cannot be reversed.',
-                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13.s),
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 13.s,
+                      ),
                     ),
                     SizedBox(height: 24.h),
                     _buildLabel('Alias (Optional)', context),
@@ -223,14 +249,19 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
                   Container(
                     padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
-                      color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+                      color: colorScheme.tertiaryContainer.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: colorScheme.tertiaryContainer),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, color: colorScheme.onTertiaryContainer),
+                        Icon(
+                          Icons.info_outline,
+                          color: colorScheme.onTertiaryContainer,
+                        ),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Column(
@@ -271,11 +302,14 @@ class _AddCryptoPaymentViewState extends State<_AddCryptoPaymentView> {
                       borderRadius: BorderRadius.circular(30.r),
                     ),
                   ),
-                  icon: isLoading 
+                  icon: isLoading
                       ? SizedBox(
-                          width: 20.h, 
-                          height: 20.h, 
-                          child: CircularProgressIndicator(color: colorScheme.onPrimary, strokeWidth: 2)
+                          width: 20.h,
+                          height: 20.h,
+                          child: CircularProgressIndicator(
+                            color: colorScheme.onPrimary,
+                            strokeWidth: 2,
+                          ),
                         )
                       : Icon(Icons.save, color: colorScheme.onPrimary),
                   label: Text(

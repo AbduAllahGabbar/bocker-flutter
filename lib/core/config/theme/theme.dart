@@ -168,8 +168,8 @@ class MaterialTheme {
       ),
       labelMedium: baseText.labelMedium?.copyWith(
         fontSize: 12,
-        fontWeight: FontWeight.w400
-      )
+        fontWeight: FontWeight.w400,
+      ),
     );
 
     return ThemeData(

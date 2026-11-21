@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../cubit/mt5_data_cubit.dart';
 import '../cubit/mt5_data_state.dart';
 import '../../../../features/accounts/data/models/account_model.dart';
 import '../../data/models/mt5_item_model.dart';
+import '../../data/models/mt5_order_type.dart';
 
 class Mt5DataPage extends StatefulWidget {
   const Mt5DataPage({super.key});
@@ -31,8 +32,22 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
     super.dispose();
   }
 
+  /// The symbol / order-type filters are also applied locally, so a page can
+  /// come back fully filtered out: keep paging instead of showing "empty".
+  bool _needsMorePages(Mt5DataState state) {
+    final needsMore =
+        state.hasMore && state.list.isNotEmpty && !state.isLoadingList;
+    if (needsMore) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<Mt5DataCubit>().fetchList(isLoadMore: true);
+      });
+    }
+    return state.hasMore && state.list.isNotEmpty;
+  }
+
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       context.read<Mt5DataCubit>().fetchList(isLoadMore: true);
     }
   }
@@ -42,11 +57,14 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
     return BlocConsumer<Mt5DataCubit, Mt5DataState>(
       listener: (context, state) {
         if (state.error != null && state.error!.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.error!)));
         }
       },
       builder: (context, state) {
         final cubit = context.read<Mt5DataCubit>();
+        final items = state.visibleList;
 
         return Scaffold(
           appBar: AppBar(
@@ -55,12 +73,20 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
               if (state.isSyncing)
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: Center(child: SizedBox(width: 20.w, height: 20.w, child: CircularProgressIndicator(strokeWidth: 2))),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20.w,
+                      height: 20.w,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
                 )
               else
                 IconButton(
                   icon: const Icon(Icons.sync),
-                  onPressed: state.selectedAccount != null ? () => cubit.syncAccount() : null,
+                  onPressed: state.selectedAccount != null
+                      ? () => cubit.syncAccount()
+                      : null,
                 ),
             ],
           ),
@@ -82,44 +108,47 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
                         _buildSummaryCard(context, state),
                       SizedBox(height: 24.h),
                       _buildFilterBar(context, state),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildSearchBar(context, state),
                       SizedBox(height: 16.h),
                     ]),
                   ),
                 ),
-                if (state.isLoadingList && state.list.isEmpty)
+                if (state.isLoadingList && items.isEmpty)
                   const SliverToBoxAdapter(
                     child: Center(child: CircularProgressIndicator()),
                   )
-                else if (state.list.isEmpty)
-                  const SliverToBoxAdapter(
+                else if (items.isEmpty)
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.all(32.0),
-                      child: Center(child: Text('No records found.')),
+                      padding: const EdgeInsets.all(32.0),
+                      child: Center(
+                        child: _needsMorePages(state)
+                            ? const CircularProgressIndicator()
+                            : const Text('No records found.'),
+                      ),
                     ),
                   )
                 else
                   SliverPadding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index >= state.list.length) {
-                            return state.hasMore
-                                ? const Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: Center(child: CircularProgressIndicator()),
-                                  )
-                                : const SizedBox.shrink();
-                          }
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 12.h),
-                            child: _buildListItem(context, state.list[index]),
-                          );
-                        },
-                        childCount: state.list.length + (state.hasMore ? 1 : 0),
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        if (index >= items.length) {
+                          return state.hasMore
+                              ? const Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 12.h),
+                          child: _Mt5ListItem(item: items[index]),
+                        );
+                      }, childCount: items.length + (state.hasMore ? 1 : 0)),
                     ),
                   ),
                 SliverToBoxAdapter(child: SizedBox(height: 40.h)),
@@ -152,7 +181,7 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
           items: state.accounts.map((account) {
             return DropdownMenuItem(
               value: account,
-              child: Text('Account #${account.id} - ${account.code}'),
+              child: Text('Account ${account.displayNumber}'),
             );
           }).toList(),
           onChanged: (account) {
@@ -183,20 +212,40 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
         children: [
           Text(
             'BALANCE',
-            style: TextStyle(color: colorScheme.onPrimary.withValues(alpha: 0.7), fontWeight: FontWeight.bold, fontSize: 12.sp),
+            style: TextStyle(
+              color: colorScheme.onPrimary.withValues(alpha: 0.7),
+              fontWeight: FontWeight.bold,
+              fontSize: 12.sp,
+            ),
           ),
           SizedBox(height: 4.h),
           Text(
             '\$${summary.displayBalance.toStringAsFixed(2)}',
-            style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 28.sp),
+            style: TextStyle(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 28.sp,
+            ),
           ),
           SizedBox(height: 20.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSummaryItem('EQUITY', '\$${summary.displayEquity.toStringAsFixed(2)}', colorScheme),
-              _buildSummaryItem('MARGIN', '\$${summary.displayMargin.toStringAsFixed(2)}', colorScheme),
-              _buildSummaryItem('PROFIT', '\$${summary.displayProfit.toStringAsFixed(2)}', colorScheme),
+              _buildSummaryItem(
+                'EQUITY',
+                '\$${summary.displayEquity.toStringAsFixed(2)}',
+                colorScheme,
+              ),
+              _buildSummaryItem(
+                'MARGIN',
+                '\$${summary.displayMargin.toStringAsFixed(2)}',
+                colorScheme,
+              ),
+              _buildSummaryItem(
+                'PROFIT',
+                '\$${summary.displayProfit.toStringAsFixed(2)}',
+                colorScheme,
+              ),
             ],
           ),
         ],
@@ -204,18 +253,30 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, ColorScheme colorScheme) {
+  Widget _buildSummaryItem(
+    String label,
+    String value,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(color: colorScheme.onPrimary.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10.sp),
+          style: TextStyle(
+            color: colorScheme.onPrimary.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w600,
+            fontSize: 10.sp,
+          ),
         ),
         SizedBox(height: 4.h),
         Text(
           value,
-          style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 14.sp),
+          style: TextStyle(
+            color: colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 14.sp,
+          ),
         ),
       ],
     );
@@ -247,8 +308,12 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
                     context: context,
                     firstDate: DateTime(2000),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
-                    initialDateRange: state.dateFrom != null && state.dateTo != null
-                        ? DateTimeRange(start: state.dateFrom!, end: state.dateTo!)
+                    initialDateRange:
+                        state.dateFrom != null && state.dateTo != null
+                        ? DateTimeRange(
+                            start: state.dateFrom!,
+                            end: state.dateTo!,
+                          )
                         : null,
                   );
                   if (picked != null) {
@@ -256,18 +321,56 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
                   }
                 },
                 icon: const Icon(Icons.date_range, size: 18),
-                label: Text(state.dateFrom != null && state.dateTo != null
-                    ? '${DateFormat('MMM d').format(state.dateFrom!)} - ${DateFormat('MMM d').format(state.dateTo!)}'
-                    : 'Date Range'),
+                label: Text(
+                  state.dateFrom != null && state.dateTo != null
+                      ? '${DateFormat('MMM d, y').format(state.dateFrom!)} - ${DateFormat('MMM d, y').format(state.dateTo!)}'
+                      : 'Date Range',
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             SizedBox(width: 8.w),
             TextButton(
-              onPressed: () {
-                _searchController.clear();
-                cubit.clearFilters();
-              },
+              onPressed: state.hasActiveFilters
+                  ? () {
+                      _searchController.clear();
+                      FocusScope.of(context).unfocus();
+                      cubit.clearFilters();
+                    }
+                  : null,
               child: const Text('Clear'),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: _buildOptionsDropdown(
+                context: context,
+                label: 'Order type',
+                icon: Icons.category_outlined,
+                value: state.typeFilter,
+                options: [
+                  for (final type in Mt5OrderType.all)
+                    (value: type.value, label: type.label),
+                ],
+                onChanged: cubit.setTypeFilter,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: _buildOptionsDropdown(
+                context: context,
+                label: 'Symbol',
+                icon: Icons.show_chart,
+                value: state.symbolFilter,
+                options: [
+                  for (final symbol in state.availableSymbols)
+                    (value: symbol, label: symbol),
+                ],
+                onChanged: cubit.setSymbolFilter,
+              ),
             ),
           ],
         ),
@@ -275,7 +378,88 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
     );
   }
 
-  Widget _buildFilterChip(String kind, String label, Mt5DataState state, Mt5DataCubit cubit) {
+  Widget _buildOptionsDropdown({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required String? value,
+    required List<({String value, String label})> options,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    // Keep a selected value usable even if it is not part of the options list.
+    final items = [
+      ...options,
+      if (value != null && !options.any((o) => o.value == value))
+        (value: value, label: value),
+    ];
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12.r),
+      borderSide: BorderSide(color: colorScheme.outlineVariant),
+    );
+
+    return DropdownButtonFormField<String>(
+      // FormField does not re-read initialValue on rebuild, so the key makes
+      // the field follow the cubit (e.g. when filters are cleared).
+      key: ValueKey('$label-${value ?? 'all'}'),
+      initialValue: value,
+      isExpanded: true,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+      borderRadius: BorderRadius.circular(12.r),
+      style: TextStyle(fontSize: 13.sp, color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontSize: 13.sp,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        prefixIcon: Icon(
+          icon,
+          size: 18.sp,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        prefixIconConstraints: BoxConstraints(minWidth: 34.w),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerLowest,
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 14.h),
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: BorderSide(color: colorScheme.primary),
+        ),
+      ),
+      hint: Text(
+        'All',
+        style: TextStyle(fontSize: 13.sp, color: colorScheme.onSurfaceVariant),
+      ),
+      items: [
+        DropdownMenuItem<String>(
+          value: null,
+          child: Text('All', style: TextStyle(fontSize: 13.sp)),
+        ),
+        ...items.map(
+          (option) => DropdownMenuItem<String>(
+            value: option.value,
+            child: Text(
+              option.label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 13.sp),
+            ),
+          ),
+        ),
+      ],
+      onChanged: items.isEmpty ? null : onChanged,
+    );
+  }
+
+  Widget _buildFilterChip(
+    String kind,
+    String label,
+    Mt5DataState state,
+    Mt5DataCubit cubit,
+  ) {
     final isSelected = state.filterKind == kind;
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
@@ -289,11 +473,15 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
         backgroundColor: colorScheme.surfaceContainerHighest,
         selectedColor: colorScheme.primaryContainer,
         labelStyle: TextStyle(
-          color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
+          color: isSelected
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurfaceVariant,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
         side: BorderSide.none,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
       ),
     );
   }
@@ -301,33 +489,88 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
   Widget _buildSearchBar(BuildContext context, Mt5DataState state) {
     return TextField(
       controller: _searchController,
+      textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: 'Search ticket, symbol...',
+        hintText: 'Search order id, symbol...',
         prefixIcon: const Icon(Icons.search),
+        suffixIcon: state.searchQuery.isEmpty
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  _searchController.clear();
+                  FocusScope.of(context).unfocus();
+                  context.read<Mt5DataCubit>().setSearchQuery('');
+                },
+              ),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       ),
       onSubmitted: (val) {
-        context.read<Mt5DataCubit>().setSearchQuery(val);
+        context.read<Mt5DataCubit>().setSearchQuery(val.trim());
       },
     );
   }
+}
 
-  Widget _buildListItem(BuildContext context, Mt5ItemModel item) {
+/// A single record, collapsed to the essentials and expandable for the rest.
+class _Mt5ListItem extends StatefulWidget {
+  const _Mt5ListItem({required this.item});
+
+  final Mt5ItemModel item;
+
+  @override
+  State<_Mt5ListItem> createState() => _Mt5ListItemState();
+}
+
+class _Mt5ListItemState extends State<_Mt5ListItem> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
     final colorScheme = Theme.of(context).colorScheme;
-    final isPositive = item.displayProfit >= 0;
-    
+    final amount = item.displayAmount;
+    final isPositive = amount >= 0;
+    final type = item.displayType.toLowerCase();
+
+    final icon = switch (type) {
+      'deposit' => Icons.arrow_downward,
+      'withdrawal' || 'withdraw' => Icons.arrow_upward,
+      'transfer' => Icons.swap_horiz,
+      'balance' => Icons.account_balance_wallet_outlined,
+      'credit' || 'bonus' => Icons.card_giftcard,
+      'buy' => Icons.trending_up,
+      'sell' => Icons.trending_down,
+      _ => Icons.receipt_long_outlined,
+    };
+
+    final accent = isPositive ? colorScheme.primary : colorScheme.error;
+    final accentContainer = isPositive
+        ? colorScheme.primaryContainer
+        : colorScheme.errorContainer;
+    final onAccentContainer = isPositive
+        ? colorScheme.onPrimaryContainer
+        : colorScheme.onErrorContainer;
+
+    final title = item.displaySymbol.isNotEmpty
+        ? item.displaySymbol
+        : (item.displayType.isNotEmpty ? item.displayType : 'Transaction');
+
     return Container(
-      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20.r),
@@ -338,149 +581,233 @@ class _Mt5DataPageState extends State<Mt5DataPage> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10.r),
-                    decoration: BoxDecoration(
-                      color: isPositive ? colorScheme.primaryContainer : colorScheme.errorContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      item.displayType.toLowerCase() == 'deposit' ? Icons.arrow_downward : 
-                      item.displayType.toLowerCase() == 'withdrawal' ? Icons.arrow_upward : 
-                      Icons.swap_horiz,
-                      color: isPositive ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
-                      size: 20.sp,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.displaySymbol.isNotEmpty ? item.displaySymbol : 'Transaction',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
-                      ),
-                      Text(
-                        item.displayType.toUpperCase(),
-                        style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12.sp, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${isPositive ? '+' : ''}\$${item.displayProfit.abs().toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18.sp,
-                      color: isPositive ? colorScheme.primary : colorScheme.error,
-                    ),
-                  ),
-                  Container(
-                    margin: EdgeInsets.only(top: 4.h),
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(6.r),
-                    ),
-                    child: Text(
-                      '#${item.displayTicket}',
-                      style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          
-          // Data Grid
-          Container(
-            padding: EdgeInsets.all(12.r),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
-            ),
-            child: Wrap(
-              spacing: 16.s,
-              runSpacing: 12.s,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20.r),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: EdgeInsets.all(16.r),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailItem(context, 'Lots', item.displayVolume.toString(), colorScheme),
-                _buildDetailItem(context, 'Bonus', item.displayBonus.toString(), colorScheme),
-                _buildDetailItem(context, 'Open Price', item.displayOpenPrice.toString(), colorScheme),
-                if (item.displayClosePrice != 0)
-                  _buildDetailItem(context, 'Close Price', item.displayClosePrice.toString(), colorScheme),
-                _buildDetailItem(context, 'S/L', item.displaySl.toString(), colorScheme),
-                _buildDetailItem(context, 'T/P', item.displayTp.toString(), colorScheme),
-                _buildDetailItem(context, 'Commission', item.displayCommission.toString(), colorScheme),
-                _buildDetailItem(context, 'Swap', item.displaySwap.toString(), colorScheme),
-                _buildDetailItem(context, 'Floating P/L', item.displayProfit.toStringAsFixed(2), colorScheme),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10.r),
+                      decoration: BoxDecoration(
+                        color: accentContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: onAccentContainer, size: 20.sp),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  item.displayTypeLabel.toUpperCase(),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                '#${item.displayTicket}',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _money(amount, signed: true),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 17.sp,
+                            color: accent,
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          item.displayOpenTime,
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 200),
+                  crossFadeState: _expanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  firstChild: const SizedBox(width: double.infinity),
+                  secondChild: _buildDetails(context, item, colorScheme),
+                ),
               ],
             ),
           ),
-          
-          SizedBox(height: 16.h),
-          
-          // Timeline Footer
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildTimeItem(context, 'Opened', item.displayOpenTime, colorScheme, Icons.play_circle_outline),
-              if (item.displayCloseTime != '-' && item.displayCloseTime.isNotEmpty)
-                _buildTimeItem(context, 'Closed', item.displayCloseTime, colorScheme, Icons.stop_circle_outlined, isEnd: true),
-            ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetails(
+    BuildContext context,
+    Mt5ItemModel item,
+    ColorScheme colorScheme,
+  ) {
+    final details = <({String label, String value})>[
+      (label: 'Order ID', value: item.displayTicket),
+      (label: 'Type', value: item.displayTypeLabel),
+      if (item.displaySymbol.isNotEmpty)
+        (label: 'Symbol', value: item.displaySymbol),
+      if (item.displayDirection.isNotEmpty)
+        (label: 'Side', value: item.displayDirection.toUpperCase()),
+      (label: 'Amount', value: _money(item.displayAmount, signed: true)),
+      (label: 'Lots', value: _number(item.displayVolume)),
+      (label: 'Bonus', value: _number(item.displayBonus)),
+      if (item.displayCredit != 0)
+        (label: 'Credit', value: _number(item.displayCredit)),
+      if (item.displayOpenPrice != 0)
+        (label: 'Open Price', value: _number(item.displayOpenPrice)),
+      if (item.displayClosePrice != 0)
+        (label: 'Close Price', value: _number(item.displayClosePrice)),
+      if (item.displaySl != 0) (label: 'S/L', value: _number(item.displaySl)),
+      if (item.displayTp != 0) (label: 'T/P', value: _number(item.displayTp)),
+      (label: 'Commission', value: _number(item.displayCommission)),
+      (label: 'Swap', value: _number(item.displaySwap)),
+      (label: 'Floating P/L', value: item.displayProfit.toStringAsFixed(2)),
+      (label: 'Open Time', value: item.displayOpenTime),
+      (label: 'Close Time', value: item.displayCloseTime),
+      if (item.displayPaymentMethod.isNotEmpty)
+        (label: 'Payment Method', value: item.displayPaymentMethod),
+      if (item.displaySource.isNotEmpty)
+        (label: 'Source', value: item.displaySource),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 14.h),
+        Container(
+          padding: EdgeInsets.all(12.r),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+            ),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final spacing = 12.w;
+              final itemWidth = (constraints.maxWidth - spacing) / 2;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: 12.h,
+                children: details
+                    .map(
+                      (detail) => SizedBox(
+                        width: itemWidth,
+                        child: _buildDetailItem(
+                          detail.label,
+                          detail.value,
+                          colorScheme,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
+        ),
+        if (item.displayComment.isNotEmpty) ...[
+          SizedBox(height: 10.h),
+          Text(
+            item.displayComment,
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontStyle: FontStyle.italic,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDetailItem(BuildContext context, String label, String value, ColorScheme colorScheme) {
-    return SizedBox(
-      width: MediaQuery.widthOf(context)-16.s/2, // Adjusted for internal padding
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 11.sp, fontWeight: FontWeight.w500)),
-          SizedBox(height: 2.h),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.sp, color: colorScheme.onSurface)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimeItem(BuildContext context, String label, String timeStr, ColorScheme colorScheme, IconData icon, {bool isEnd = false}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (!isEnd) Icon(icon, size: 14.sp, color: colorScheme.primary),
-        if (!isEnd) SizedBox(width: 4.w),
-        Column(
-          crossAxisAlignment: isEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10.sp)),
-            Text(timeStr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.sp)),
-          ],
-        ),
-        if (isEnd) SizedBox(width: 4.w),
-        if (isEnd) Icon(icon, size: 14.sp, color: colorScheme.error),
       ],
     );
   }
+
+  Widget _buildDetailItem(String label, String value, ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: 2.h),
+        Text(
+          value.isEmpty ? '-' : value,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13.sp,
+            color: colorScheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _money(num value, {bool signed = false}) {
+    final sign = (!signed || value == 0) ? '' : (value > 0 ? '+' : '-');
+    return '$sign\$${value.abs().toStringAsFixed(2)}';
+  }
+
+  String _number(num value) => value.toStringAsFixed(2);
 }

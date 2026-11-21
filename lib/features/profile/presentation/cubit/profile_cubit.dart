@@ -7,16 +7,13 @@ class ProfileCubit extends Cubit<void> {
   final ProfileRepository _profileRepository;
 
   ProfileCubit({required ProfileRepository profileRepository})
-      : _profileRepository = profileRepository,
-        super(null);
+    : _profileRepository = profileRepository,
+      super(null);
 
   Future<void> fetchUserView(String userId) async {
     final result = await _profileRepository.fetchUserView(userId);
-    result.fold(
-      (l) {},
-      (user) {
-        di<AuthCubit>().updateUser(user);
-      },
-    );
+    result.fold((l) {}, (user) {
+      di<AuthCubit>().updateUser(user);
+    });
   }
 }

@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jiffy/jiffy.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/features/app/app_cubit.dart';
-
 
 import '../../../../core/componants/my_elevated_button.dart';
 import '../../../../core/config/language/language_manager.dart';
@@ -30,12 +29,11 @@ class _LanguagePageState extends State<LanguagePage> {
 
   void _applyChanges() {
     if (_selectedLanguage == null) return;
-    
+
     context.setLocale(_selectedLanguage!.locale);
     Jiffy.setLocale(_selectedLanguage!.value);
     di<AppCubit>().changeLanguage(_selectedLanguage!);
     context.pop(true);
-
   }
 
   @override
@@ -52,7 +50,11 @@ class _LanguagePageState extends State<LanguagePage> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87, size: 24.h),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: Colors.black87,
+            size: 24.h,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -169,11 +171,7 @@ class _LanguagePageState extends State<LanguagePage> {
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check,
-                color: const Color(0xFF1D3A99),
-                size: 24.h,
-              ),
+              Icon(Icons.check, color: const Color(0xFF1D3A99), size: 24.h),
           ],
         ),
       ),

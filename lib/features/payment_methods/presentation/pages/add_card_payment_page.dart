@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/di/di_container.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/componants/toast.dart';
 import '../../../transactions/data/models/payment_method_model.dart';
+import '../../data/models/user_payment_method_model.dart';
 import '../cubit/add_payment_method_cubit.dart';
 import '../cubit/add_payment_method_state.dart';
 import 'package:flutter_credit_card/flutter_credit_card.dart';
 
 class AddCardPaymentPage extends StatelessWidget {
   final PaymentMethodModel method;
-  
-  const AddCardPaymentPage({super.key, required this.method});
+
+  /// When set, saving replaces this existing method (the backend has no
+  /// update endpoint - see PaymentMethodsRepository.replacePaymentMethod).
+  final UserPaymentMethodModel? replacing;
+
+  const AddCardPaymentPage({super.key, required this.method, this.replacing});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => DI.initAddPaymentMethod(),
-      child: _AddCardPaymentView(method: method),
+      child: _AddCardPaymentView(method: method, replacing: replacing),
     );
   }
 }
 
 class _AddCardPaymentView extends StatefulWidget {
   final PaymentMethodModel method;
-  
-  const _AddCardPaymentView({required this.method});
+  final UserPaymentMethodModel? replacing;
+
+  const _AddCardPaymentView({required this.method, this.replacing});
 
   @override
   State<_AddCardPaymentView> createState() => _AddCardPaymentViewState();
@@ -37,13 +43,51 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
   String cardNumber = '';
   String expiryDate = '';
   String cardHolderName = '';
-  bool isCvvFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Edit flow: prefill with the method being replaced.
+    final existing = widget.replacing;
+    if (existing != null) {
+      cardNumber = existing.cardNumber ?? '';
+      cardHolderName = existing.cardholderName ?? '';
+      final expiry = DateTime.tryParse(existing.cardExpiryDate ?? '');
+      if (expiry != null) {
+        expiryDate =
+            '${expiry.month.toString().padLeft(2, '0')}/'
+            '${(expiry.year % 100).toString().padLeft(2, '0')}';
+      }
+    }
+  }
+
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  /// Converts the `MM/YY` input into the ISO timestamp the API stores.
+  /// Returns `null` when the input is not a usable expiry date.
+  String? _expiryToIso(String value) {
+    final match = RegExp(r'^\s*(\d{2})\s*/\s*(\d{2})\s*$').firstMatch(value);
+    if (match == null) return null;
+
+    final month = int.parse(match.group(1)!);
+    if (month < 1 || month > 12) return null;
+    final year = 2000 + int.parse(match.group(2)!);
+
+    // A card is valid through the last moment of its expiry month.
+    final lastDay = DateTime.utc(year, month + 1, 0).day;
+    return DateTime.utc(year, month, lastDay, 23, 59, 59).toIso8601String();
+  }
 
   void _submit(BuildContext context) {
     if (formKey.currentState?.validate() ?? false) {
-      // In a real app, parse the MM/YY into a proper ISO date
-      final dateStr = "2026-12-31T23:59:59.000Z"; // Placeholder for API format
+      final dateStr = _expiryToIso(expiryDate);
+      if (dateStr == null) {
+        ToastState.error.snackBar(
+          context,
+          'Please enter a valid expiry date (MM/YY)',
+        );
+        return;
+      }
 
       Map<String, dynamic> data = {
         "paymentMethod": {
@@ -52,10 +96,13 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
         },
         "cardNumber": cardNumber,
         "cardholderName": cardHolderName,
-        "cardExpiryDate": dateStr, 
+        "cardExpiryDate": dateStr,
       };
 
-      context.read<AddPaymentMethodCubit>().submitPaymentMethod(data);
+      context.read<AddPaymentMethodCubit>().submitPaymentMethod(
+        data,
+        replacingCode: widget.replacing?.code,
+      );
     } else {
       ToastState.error.snackBar(context, 'Please fill all fields correctly');
     }
@@ -67,7 +114,6 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
         cardNumber = creditCardModel.cardNumber;
         expiryDate = creditCardModel.expiryDate;
         cardHolderName = creditCardModel.cardHolderName;
-        isCvvFocused = creditCardModel.isCvvFocused;
       });
     }
   }
@@ -85,17 +131,11 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
         title: Text(
           widget.method.name,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
-            onPressed: () {},
-          )
-        ],
       ),
       body: BlocConsumer<AddPaymentMethodCubit, AddPaymentMethodState>(
         listener: (context, state) {
@@ -115,7 +155,8 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                   Center(
                     child: Text(
                       'Add New Card',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -129,16 +170,18 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  
+
                   CreditCardWidget(
                     cardNumber: cardNumber,
                     expiryDate: expiryDate,
                     cardHolderName: cardHolderName,
-                    cvvCode: 'xxx',
+                    // No CVV is collected or stored: the back of the card has
+                    // nothing to show, so it is never flipped into view.
+                    cvvCode: '',
                     bankName: 'BrokerPro',
-                    showBackView: isCvvFocused,
+                    showBackView: false,
+                    isSwipeGestureEnabled: false,
                     obscureCardNumber: true,
-                    obscureCardCvv: true,
                     isHolderNameVisible: true,
                     cardBgColor: colorScheme.primary,
                     onCreditCardWidgetChange: (CreditCardBrand brand) {},
@@ -153,16 +196,18 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                       ),
                     ],
                   ),
-                  
+
                   CreditCardForm(
                     formKey: formKey,
-                    obscureCvv: true,
                     obscureNumber: true,
                     cardNumber: cardNumber,
                     isHolderNameVisible: true,
                     isCardNumberVisible: true,
                     isExpiryDateVisible: true,
-                    cvvCode: 'xxx',
+                    // Hides the field and keeps it out of the form, so its
+                    // validator never runs.
+                    enableCvv: false,
+                    cvvCode: '',
                     cardHolderName: cardHolderName,
                     expiryDate: expiryDate,
                     onCreditCardModelChange: onCreditCardModelChange,
@@ -182,16 +227,6 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                         fillColor: colorScheme.surfaceContainerHighest,
                         labelText: 'Expired Date',
                         hintText: 'XX/XX',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      cvvCodeDecoration: InputDecoration(
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest,
-                        labelText: 'CVV',
-                        hintText: 'XXX',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
                           borderSide: BorderSide.none,
@@ -220,11 +255,18 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.shield_outlined, size: 16.s, color: colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 16.s,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         SizedBox(width: 8.w),
                         Text(
                           'Your connection is secure and encrypted',
-                          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12.s),
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 12.s,
+                          ),
                         ),
                       ],
                     ),
@@ -239,13 +281,19 @@ class _AddCardPaymentViewState extends State<_AddCardPaymentView> {
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
-                        icon: isLoading 
+                        icon: isLoading
                             ? SizedBox(
-                                width: 20.h, 
-                                height: 20.h, 
-                                child: CircularProgressIndicator(color: colorScheme.onPrimary, strokeWidth: 2)
+                                width: 20.h,
+                                height: 20.h,
+                                child: CircularProgressIndicator(
+                                  color: colorScheme.onPrimary,
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : Icon(Icons.check_circle_outline, color: colorScheme.onPrimary),
+                            : Icon(
+                                Icons.check_circle_outline,
+                                color: colorScheme.onPrimary,
+                              ),
                         label: Text(
                           'Save Payment Details',
                           style: TextStyle(

@@ -125,12 +125,12 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<MessageModel> messages)?  success,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<MessageModel> messages,  List<OutgoingMessage> pending)?  success,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
 return loading();case _Success() when success != null:
-return success(_that.messages);case _Error() when error != null:
+return success(_that.messages,_that.pending);case _Error() when error != null:
 return error(_that.message);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<MessageModel> messages)  success,required TResult Function( String message)  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<MessageModel> messages,  List<OutgoingMessage> pending)  success,required TResult Function( String message)  error,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial();case _Loading():
 return loading();case _Success():
-return success(_that.messages);case _Error():
+return success(_that.messages,_that.pending);case _Error():
 return error(_that.message);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return error(_that.message);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<MessageModel> messages)?  success,TResult? Function( String message)?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<MessageModel> messages,  List<OutgoingMessage> pending)?  success,TResult? Function( String message)?  error,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial();case _Loading() when loading != null:
 return loading();case _Success() when success != null:
-return success(_that.messages);case _Error() when error != null:
+return success(_that.messages,_that.pending);case _Error() when error != null:
 return error(_that.message);case _:
   return null;
 
@@ -251,7 +251,7 @@ String toString() {
 
 
 class _Success implements ChatState {
-  const _Success(final  List<MessageModel> messages): _messages = messages;
+  const _Success(final  List<MessageModel> messages, {final  List<OutgoingMessage> pending = const <OutgoingMessage>[]}): _messages = messages,_pending = pending;
   
 
  final  List<MessageModel> _messages;
@@ -259,6 +259,13 @@ class _Success implements ChatState {
   if (_messages is EqualUnmodifiableListView) return _messages;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_messages);
+}
+
+ final  List<OutgoingMessage> _pending;
+@JsonKey() List<OutgoingMessage> get pending {
+  if (_pending is EqualUnmodifiableListView) return _pending;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_pending);
 }
 
 
@@ -272,16 +279,16 @@ _$SuccessCopyWith<_Success> get copyWith => __$SuccessCopyWithImpl<_Success>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Success&&const DeepCollectionEquality().equals(other._messages, _messages));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Success&&const DeepCollectionEquality().equals(other._messages, _messages)&&const DeepCollectionEquality().equals(other._pending, _pending));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_messages));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_messages),const DeepCollectionEquality().hash(_pending));
 
 @override
 String toString() {
-  return 'ChatState.success(messages: $messages)';
+  return 'ChatState.success(messages: $messages, pending: $pending)';
 }
 
 
@@ -292,7 +299,7 @@ abstract mixin class _$SuccessCopyWith<$Res> implements $ChatStateCopyWith<$Res>
   factory _$SuccessCopyWith(_Success value, $Res Function(_Success) _then) = __$SuccessCopyWithImpl;
 @useResult
 $Res call({
- List<MessageModel> messages
+ List<MessageModel> messages, List<OutgoingMessage> pending
 });
 
 
@@ -309,10 +316,11 @@ class __$SuccessCopyWithImpl<$Res>
 
 /// Create a copy of ChatState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? messages = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? messages = null,Object? pending = null,}) {
   return _then(_Success(
 null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
-as List<MessageModel>,
+as List<MessageModel>,pending: null == pending ? _self._pending : pending // ignore: cast_nullable_to_non_nullable
+as List<OutgoingMessage>,
   ));
 }
 

@@ -37,7 +37,7 @@ class IbRemoteDataSourceImpl implements IbRemoteDataSource {
         "search": search,
         "limit": limit,
         "pageNumber": pageNumber,
-        "skip": skip
+        "skip": skip,
       },
     );
     return IbDashboardResponse.fromJson(response.data);
@@ -54,13 +54,11 @@ class IbRemoteDataSourceImpl implements IbRemoteDataSource {
     final response = await dio.post(
       '/ibTransactions/all',
       data: {
-        "where": {
-          "type.code": typeCode
-        },
+        "where": {"type.code": typeCode},
         "search": search,
         "limit": limit,
         "skip": skip,
-        "pageNumber": pageNumber
+        "pageNumber": pageNumber,
       },
     );
     return IbTransactionResponse.fromJson(response.data);

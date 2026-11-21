@@ -4,6 +4,10 @@ import '../../../core/errors/failure.dart';
 import '../data/auth_repository.dart';
 import '../data/data_source/auth_remote_data_source.dart';
 import '../data/models/user_model.dart';
+import '../data/repository/user_access.dart';
+import '../../../core/network/dio/session_manager.dart';
+import '../../../core/services/notifications/notifications_bootstrap.dart';
+import '../../../core/services/referral/referral_service.dart';
 import 'auth_state.dart' as auth_state;
 
 class AuthCubit extends Cubit<auth_state.AuthState> {
@@ -12,7 +16,6 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   AuthCubit({required AuthRepository authRepository})
     : _authRepository = authRepository,
       super(const auth_state.AuthState.initial());
-
 
   Future<void> signIn({
     required String emailOrPhone,
@@ -23,44 +26,51 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
       emailOrPhone: emailOrPhone,
       password: password,
     );
-    result.fold(
-      (l) => emit(auth_state.AuthState.error(l.message)),
-      (loginResult) {
-        switch (loginResult) {
-          case AuthenticatedLoginResult(:final user):
-            emit(auth_state.AuthState.authenticated(user: user));
-          case OtpRequiredLoginResult(:final customerId, :final phone):
-            emit(auth_state.AuthState.otpRequired(
+    result.fold((l) => emit(auth_state.AuthState.error(l.message)), (
+      loginResult,
+    ) {
+      switch (loginResult) {
+        case AuthenticatedLoginResult(:final user):
+          emit(
+            auth_state.AuthState.authenticated(
+              user: user,
+              token: UserAccess.accessToken,
+            ),
+          );
+          // Register this device for push and start the live counters.
+          unawaited(NotificationsBootstrap.instance.onSignedIn());
+        case OtpRequiredLoginResult(:final customerId, :final phone):
+          emit(
+            auth_state.AuthState.otpRequired(
               customerId: customerId,
               phone: phone,
-            ));
-          case FormNotCompletedLoginResult(:final email, :final password):
-            emit(auth_state.AuthState.formNotCompleted(
+            ),
+          );
+        case FormNotCompletedLoginResult(:final email, :final password):
+          emit(
+            auth_state.AuthState.formNotCompleted(
               email: email,
               password: password,
-            ));
-        }
-      },
-    );
+            ),
+          );
+      }
+    });
   }
 
-  Future<void> signUp({
-    required Map<String, dynamic> data,
-  }) async {
+  Future<void> signUp({required Map<String, dynamic> data}) async {
     emit(const auth_state.AuthState.loading());
     final result = await _authRepository.signUp(data: data);
-    result.fold(
-      (l) => emit(auth_state.AuthState.error(l.message)),
-      (response) {
-        if (response.done) {
-          emit(auth_state.AuthState.otpRequired(
-            email: response.email,
-          ));
-        } else {
-          emit(const auth_state.AuthState.unauthenticated());
-        }
-      },
-    );
+    result.fold((l) => emit(auth_state.AuthState.error(l.message)), (response) {
+      if (response.done) {
+        // The account exists now, so the affiliate referral has been consumed.
+        // This is the only place it is cleared - a failed registration keeps
+        // it for the next attempt.
+        unawaited(ReferralService.instance.clear());
+        emit(auth_state.AuthState.otpRequired(email: response.email));
+      } else {
+        emit(const auth_state.AuthState.unauthenticated());
+      }
+    });
   }
 
   Future<void> verifyEmailOtp({
@@ -69,12 +79,9 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   }) async {
     emit(const auth_state.AuthState.loading());
     final result = await _authRepository.verifyEmailOtp(email: email, otp: otp);
-    result.fold(
-      (l) => emit(auth_state.AuthState.error(l.message)),
-      (_) {
-        emit(const auth_state.AuthState.emailOtpVerified());
-      },
-    );
+    result.fold((l) => emit(auth_state.AuthState.error(l.message)), (_) {
+      emit(const auth_state.AuthState.emailOtpVerified());
+    });
   }
 
   Future<void> submitIdentityVerification({
@@ -98,13 +105,12 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
     // 1. Upload front image
     final frontRes = await _authRepository.uploadImage(frontSidePath);
     Map<String, dynamic> frontMap = {};
-    frontRes.fold(
-      (l) {},
-      (r) => frontMap = r,
-    );
+    frontRes.fold((l) {}, (r) => frontMap = r);
 
     if (frontMap.isEmpty) {
-      emit(const auth_state.AuthState.error('Failed to upload front side image'));
+      emit(
+        const auth_state.AuthState.error('Failed to upload front side image'),
+      );
       return;
     }
 
@@ -144,8 +150,12 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
     final addressForm = {
       "country": addressCountry ?? countryIssue,
       "city": (city != null && city.trim().isNotEmpty) ? city.trim() : "City",
-      "address": (address != null && address.trim().isNotEmpty) ? address.trim() : "Address",
-      "postalCode": (postalCode != null && postalCode.trim().isNotEmpty) ? postalCode.trim() : "12345",
+      "address": (address != null && address.trim().isNotEmpty)
+          ? address.trim()
+          : "Address",
+      "postalCode": (postalCode != null && postalCode.trim().isNotEmpty)
+          ? postalCode.trim()
+          : "12345",
       "document": addressDocMap,
     };
 
@@ -157,16 +167,15 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
       addressForm: addressForm,
     );
 
-    result.fold(
-      (l) => emit(auth_state.AuthState.error(l.message)),
-      (success) {
-        if (success) {
-          emit(const auth_state.AuthState.identitySubmitted());
-        } else {
-          emit(const auth_state.AuthState.error('Failed to update identity form'));
-        }
-      },
-    );
+    result.fold((l) => emit(auth_state.AuthState.error(l.message)), (success) {
+      if (success) {
+        emit(const auth_state.AuthState.identitySubmitted());
+      } else {
+        emit(
+          const auth_state.AuthState.error('Failed to update identity form'),
+        );
+      }
+    });
   }
 
   Future<void> verifyOtp({
@@ -199,9 +208,7 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
     return await _authRepository.resendOtp(customerId: customerId);
   }
 
-  Future<void> requestPhoneLoginOtp({
-    required String phone,
-  }) async {
+  Future<void> requestPhoneLoginOtp({required String phone}) async {
     emit(const auth_state.AuthState.loading());
     String normalizedPhone = phone.trim();
     if (normalizedPhone.contains('-')) {
@@ -215,15 +222,14 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
       phone: normalizedPhone,
     );
 
-    result.fold(
-      (l) => emit(auth_state.AuthState.error(l.message)),
-      (message) {
-        emit(auth_state.AuthState.otpRequired(
+    result.fold((l) => emit(auth_state.AuthState.error(l.message)), (message) {
+      emit(
+        auth_state.AuthState.otpRequired(
           customerId: 'phone_login',
           phone: normalizedPhone,
-        ));
-      },
-    );
+        ),
+      );
+    });
   }
 
   Future<void> verifyPhoneLoginOtp({
@@ -238,7 +244,7 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
         normalizedPhone = '${parts[1]}${parts[2]}';
       }
     }
-    
+
     final result = await _authRepository.verifyPhoneLoginOtp(
       phone: normalizedPhone,
       otp: otp,
@@ -248,7 +254,6 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
       (user) => emit(auth_state.AuthState.authenticated(user: user)),
     );
   }
-
 
   Future<void> resetPassword({required String identifier}) async {
     emit(const auth_state.AuthState.loading());
@@ -261,6 +266,17 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
         ),
       ),
     );
+  }
+
+  /// Re-sends the registration e-mail OTP through the backend's
+  /// `POST /api/otpMails/add` endpoint (the same endpoint the Web portal uses
+  /// to issue an e-mail OTP).
+  ///
+  /// Returns an error message on failure, or `null` on success. The auth state
+  /// is deliberately left untouched so the OTP screen stays visible.
+  Future<String?> resendEmailOtp({required String email}) async {
+    final result = await _authRepository.sendForgotPasswordOtp(email: email);
+    return result.fold((failure) => failure.message, (_) => null);
   }
 
   Future<void> sendForgotPasswordOtp({required String email}) async {
@@ -292,6 +308,8 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   Future<void> signOut() async {
     try {
       emit(const auth_state.AuthState.loading());
+      // Unregister the device while the session is still valid.
+      await NotificationsBootstrap.instance.onSignedOut();
       await _authRepository.signOut();
       emit(const auth_state.AuthState.unauthenticated());
     } catch (e) {
@@ -302,6 +320,7 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   Future<void> deleteAccount() async {
     try {
       emit(const auth_state.AuthState.loading());
+      await NotificationsBootstrap.instance.onSignedOut();
       final result = await _authRepository.deleteAccount();
       result.fold(
         (l) => emit(auth_state.AuthState.error(l.message)),
@@ -313,12 +332,34 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   }
 
   Future<void> getCurrentUser() async {
+    // Without a stored session there is nothing to restore - go straight to
+    // the unauthenticated state instead of surfacing a bogus error on start-up.
+    if (!await SessionManager.instance.readToken().then((t) => t != null)) {
+      emit(const auth_state.AuthState.unauthenticated());
+      return;
+    }
+
     emit(const auth_state.AuthState.loading());
     final result = await _authRepository.getCurrentUser();
     result.fold(
       (l) => emit(auth_state.AuthState.error(l.message)),
-      (user) => emit(auth_state.AuthState.authenticated(user: user)),
+      (user) => emit(
+        auth_state.AuthState.authenticated(
+          user: user,
+          token: UserAccess.accessToken,
+        ),
+      ),
     );
+  }
+
+  /// Drops the local session without calling the backend.
+  ///
+  /// Used when the backend has already rejected the session with HTTP 401 -
+  /// calling `/user/logout` with an invalid token would only fail again.
+  Future<void> forceSignOut() async {
+    await SessionManager.instance.clear();
+    if (isClosed) return;
+    emit(const auth_state.AuthState.unauthenticated());
   }
 
   void updateAddresses(List<Map<String, dynamic>> newAddresses) {
@@ -331,14 +372,16 @@ class AuthCubit extends Cubit<auth_state.AuthState> {
   }
 
   void updateUser(UserModel user) {
-    emit(auth_state.AuthState.authenticated(user: user));
+    emit(
+      auth_state.AuthState.authenticated(
+        user: user,
+        token: UserAccess.accessToken,
+      ),
+    );
   }
 
   Future<List<Map<String, dynamic>>> getMt5Groups() async {
     final result = await _authRepository.getMt5Groups();
-    return result.fold(
-      (l) => [],
-      (r) => r,
-    );
+    return result.fold((l) => [], (r) => r);
   }
 }

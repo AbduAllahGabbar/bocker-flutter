@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/componants/my_elevated_button.dart';
 import 'package:boker/core/componants/toast.dart';
 import 'package:boker/core/config/routes/routes_manager.dart';
 import '../../../core/componants/my_from_field.dart';
+import '../../../core/componants/password_requirements_panel.dart';
 import '../../../core/utils/constants/app_constants.dart';
+import '../../../core/utils/password_policy.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../../../core/config/language/language_manager.dart';
@@ -118,15 +120,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     return null;
   }
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter a new password'.tran;
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters'.tran;
-    }
-    return null;
-  }
+  // Same rules as registration - see PasswordPolicy.
+  String? _validatePassword(String? value) => PasswordPolicy.validate(value);
 
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
@@ -180,10 +175,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
             children: [
               // ── Back button ──────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
@@ -219,17 +211,16 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                       ),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0.05, 0),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            ),
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0.05, 0),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        ),
                         child: switch (_step) {
                           _ForgotStep.email => _buildEmailStep(
                             theme,
@@ -537,6 +528,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
             textInputAction: TextInputAction.next,
             onChanged: (_) => setState(() {}),
           ),
+          SizedBox(height: 12.h),
+          PasswordRequirementsPanel(password: _newPasswordController.text),
           SizedBox(height: 20.h),
 
           // Confirm Password

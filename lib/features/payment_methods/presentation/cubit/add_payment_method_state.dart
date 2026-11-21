@@ -16,7 +16,10 @@ class AvailableMethodsLoaded extends AddPaymentMethodState {
 class AddPaymentSuccess extends AddPaymentMethodState {
   final UserPaymentMethodModel addedMethod;
 
-  AddPaymentSuccess({required this.addedMethod});
+  /// `true` when this save replaced an existing method (edit flow).
+  final bool wasReplacement;
+
+  AddPaymentSuccess({required this.addedMethod, this.wasReplacement = false});
 }
 
 class AddPaymentMethodError extends AddPaymentMethodState {

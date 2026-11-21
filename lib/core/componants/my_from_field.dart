@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 
 class MyTextFormField extends StatelessWidget {
   const MyTextFormField({
@@ -38,7 +38,7 @@ class MyTextFormField extends StatelessWidget {
     this.maxLines = 1,
     this.suffix,
     this.suffixWidget,
-    this.iconSize=20,
+    this.iconSize = 20,
     this.svgPrefix,
     this.focusNode,
     this.buildCounter,
@@ -83,7 +83,7 @@ class MyTextFormField extends StatelessWidget {
   final double? borderRadius;
   final Color? enableBorderColor;
   final double iconSize;
-final EdgeInsetsGeometry? contentPadding;
+  final EdgeInsetsGeometry? contentPadding;
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -105,17 +105,15 @@ final EdgeInsetsGeometry? contentPadding;
       initialValue: initialValue,
       autofillHints: autofillHints,
       onFieldSubmitted: onSubmit,
-        buildCounter:buildCounter,
-      style: Theme.of(context)
-          .textTheme
-          .bodySmall!
-          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant,fontSize: 14.h),
+      buildCounter: buildCounter,
+      style: Theme.of(context).textTheme.bodySmall!.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontSize: 14.h,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
         helperText: helperText,
-        constraints: BoxConstraints(
-          maxHeight:56.h,
-        ),
+        constraints: BoxConstraints(maxHeight: 56.h),
         hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w400,
           fontSize: 14.h,
@@ -125,40 +123,34 @@ final EdgeInsetsGeometry? contentPadding;
         suffix: suffix,
         prefix: prefixWidget,
 
-        prefixIcon:   (prefixIcon != null)
+        prefixIcon: (prefixIcon != null)
             ? Padding(
-          padding:  EdgeInsets.symmetric(horizontal: 14.h),
-              child: Icon(
-                        prefixIcon,
-                        size: iconSize.h,
-                      ),
-            )
+                padding: EdgeInsets.symmetric(horizontal: 14.h),
+                child: Icon(prefixIcon, size: iconSize.h),
+              )
             : null,
         suffixIcon: suffixIcon == null
             ? suffixWidget
             : IconButton(
-          icon:Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 14.h),
-            child: Icon(
-              suffixIcon,
-              size: iconSize.h,
-            ),
-          ),
-          onPressed: suffixOnPressed,
-        ),
+                icon: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14.h),
+                  child: Icon(suffixIcon, size: iconSize.h),
+                ),
+                onPressed: suffixOnPressed,
+              ),
         labelText: labelText,
-        labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontSize: 12.h,
-        ),
-        errorStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontSize: 10.h,
-          color: Colors.red
-        ),
-        contentPadding: contentPadding?? EdgeInsets.symmetric(horizontal:14.h,vertical: 14.h),
+        labelStyle: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontSize: 12.h),
+        errorStyle: Theme.of(
+          context,
+        ).textTheme.labelMedium?.copyWith(fontSize: 10.h, color: Colors.red),
+        contentPadding:
+            contentPadding ??
+            EdgeInsets.symmetric(horizontal: 14.h, vertical: 14.h),
       ),
       validator: validator,
       textInputAction: textInputAction,
     );
   }
 }
-

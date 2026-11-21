@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/config/env/app_config.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/di/di_container.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../data/models/message_model.dart';
+import '../../data/models/outgoing_message.dart';
 import '../cubit/chat/chat_cubit.dart';
 import '../cubit/chat/chat_state.dart';
 
@@ -109,7 +111,7 @@ class _ChatViewState extends State<_ChatView> {
             child: BlocConsumer<ChatCubit, ChatState>(
               listener: (context, state) {
                 state.maybeWhen(
-                  success: (_) => Future.delayed(
+                  success: (_, _) => Future.delayed(
                     const Duration(milliseconds: 100),
                     _scrollToBottom,
                   ),
@@ -123,40 +125,42 @@ class _ChatViewState extends State<_ChatView> {
                 return state.maybeWhen(
                   initial: () => Center(child: CircularProgressIndicator()),
                   loading: () => Center(child: CircularProgressIndicator()),
-                  success: (messages) {
+                  success: (messages, pending) {
+                    if (messages.isEmpty && pending.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32.s),
+                          child: Text(
+                            'No messages yet. Send a message to start the conversation.'
+                                .tran,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Real date separators, derived from each message's own
+                    // timestamp (the previous hardcoded "TODAY" pill labelled
+                    // every conversation as if it happened today).
+                    final entries = _buildEntries(messages, pending);
+
                     return ListView.builder(
                       controller: _scrollController,
                       padding: EdgeInsets.all(16.s),
-                      itemCount: messages.length + 1, // +1 for the TODAY pill
+                      itemCount: entries.length,
                       itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Center(
-                            child: Container(
-                              margin: EdgeInsets.only(bottom: 24.s),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16.s,
-                                vertical: 6.s,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(16.s),
-                              ),
-                              child: Text(
-                                'TODAY',
-                                style: TextStyle(
-                                  fontSize: 11.s,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-
-                        final msg = messages[index - 1];
-                        final isUser = msg.type == 'user';
-
-                        return _buildMessageBubble(msg, isUser);
+                        final entry = entries[index];
+                        return switch (entry) {
+                          _DateSeparator(:final label) => _buildDatePill(label),
+                          _SentEntry(:final message) => _buildMessageBubble(
+                            message,
+                            message.type == 'user',
+                          ),
+                          _PendingEntry(:final message) => _buildPendingBubble(
+                            message,
+                          ),
+                        };
                       },
                     );
                   },
@@ -166,6 +170,155 @@ class _ChatViewState extends State<_ChatView> {
             ),
           ),
           _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  /// Groups the conversation into date separators, delivered messages and
+  /// messages still waiting to be sent.
+  List<_ChatEntry> _buildEntries(
+    List<MessageModel> messages,
+    List<OutgoingMessage> pending,
+  ) {
+    final entries = <_ChatEntry>[];
+    DateTime? lastDay;
+
+    for (final message in messages) {
+      final date = message.date == null
+          ? null
+          : DateTime.tryParse(message.date!)?.toLocal();
+      if (date != null) {
+        final day = DateTime(date.year, date.month, date.day);
+        if (lastDay == null || day != lastDay) {
+          entries.add(_DateSeparator(_dayLabel(day)));
+          lastDay = day;
+        }
+      }
+      entries.add(_SentEntry(message));
+    }
+
+    for (final message in pending) {
+      entries.add(_PendingEntry(message));
+    }
+
+    return entries;
+  }
+
+  String _dayLabel(DateTime day) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final difference = today.difference(day).inDays;
+
+    if (difference == 0) return 'TODAY'.tran;
+    if (difference == 1) return 'YESTERDAY'.tran;
+    return DateFormat('MMMM d, yyyy').format(day);
+  }
+
+  Widget _buildDatePill(String label) {
+    return Center(
+      child: Container(
+        margin: EdgeInsets.only(bottom: 24.s),
+        padding: EdgeInsets.symmetric(horizontal: 16.s, vertical: 6.s),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(16.s),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.s,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A message that failed to send, with retry / discard actions.
+  Widget _buildPendingBubble(OutgoingMessage message) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final failed = message.errorMessage != null;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 24.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.s),
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withValues(alpha: failed ? 0.45 : 0.7),
+              borderRadius: BorderRadius.circular(
+                16.s,
+              ).copyWith(bottomRight: const Radius.circular(0)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!message.isText) ...[
+                  Icon(
+                    message.isImage ? Icons.image : Icons.insert_drive_file,
+                    color: Colors.white,
+                    size: 18.s,
+                  ),
+                  SizedBox(width: 8.s),
+                ],
+                Flexible(
+                  child: Text(
+                    message.displayLabel,
+                    style: TextStyle(fontSize: 14.s, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 6.s),
+          if (message.isSending)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 12.s,
+                  width: 12.s,
+                  child: const CircularProgressIndicator(strokeWidth: 1.5),
+                ),
+                SizedBox(width: 6.s),
+                Text(
+                  'Sending...'.tran,
+                  style: TextStyle(fontSize: 11.s, color: Colors.grey.shade600),
+                ),
+              ],
+            )
+          else if (failed)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'Not sent'.tran,
+                  style: TextStyle(fontSize: 11.s, color: colorScheme.error),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.read<ChatCubit>().retry(message),
+                      child: Text('Retry'.tran),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          context.read<ChatCubit>().discard(message),
+                      child: Text(
+                        'Discard'.tran,
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -194,7 +347,7 @@ class _ChatViewState extends State<_ChatView> {
               child: Container(
                 color: Colors.white,
                 child: Image.network(
-                  'https://boker.egytag.com$url',
+                  AppConfig.resolveUrl(url)!,
                   errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.image_not_supported_outlined,
                     size: 150.s,
@@ -383,4 +536,27 @@ class _ChatViewState extends State<_ChatView> {
       ),
     );
   }
+}
+
+/// One row in the chat list.
+sealed class _ChatEntry {
+  const _ChatEntry();
+}
+
+class _DateSeparator extends _ChatEntry {
+  final String label;
+
+  const _DateSeparator(this.label);
+}
+
+class _SentEntry extends _ChatEntry {
+  final MessageModel message;
+
+  const _SentEntry(this.message);
+}
+
+class _PendingEntry extends _ChatEntry {
+  final OutgoingMessage message;
+
+  const _PendingEntry(this.message);
 }

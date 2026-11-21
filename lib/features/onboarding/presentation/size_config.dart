@@ -1,4 +1,3 @@
-
 // class SizeConfig {
 //   static MediaQueryData? _mediaQueryData;
 //   static double? screenW;

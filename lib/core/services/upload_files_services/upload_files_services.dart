@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../data/constants/apis_constants.dart';
 
 import '../../di/di_container.dart';
 import '../../errors/failure.dart';
@@ -6,8 +7,7 @@ import '../../errors/failure.dart';
 class UploadFilesServices {
   static Future<Either<Failure, Map<String, dynamic>>> uploadImage(
     String imagePath,
-  )
-  async {
+  ) async {
     final dio = di<Dio>();
     try {
       final fileName = imagePath.split(RegExp(r'[/\\]')).last;
@@ -16,10 +16,7 @@ class UploadFilesServices {
           await MultipartFile.fromFile(imagePath, filename: fileName),
         ],
       });
-      final response = await dio.post(
-        'https://boker.egytag.com/x-api/upload/image',
-        data: formData,
-      );
+      final response = await dio.post(ApiConstants.uploadImage, data: formData);
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['done'] == true) {
@@ -31,7 +28,7 @@ class UploadFilesServices {
     }
   }
 
-static  Future<Either<Failure, Map<String, dynamic>>> uploadFile(
+  static Future<Either<Failure, Map<String, dynamic>>> uploadFile(
     String filePath,
   ) async {
     try {
@@ -42,10 +39,7 @@ static  Future<Either<Failure, Map<String, dynamic>>> uploadFile(
           await MultipartFile.fromFile(filePath, filename: fileName),
         ],
       });
-      final response = await dio.post(
-        'https://boker.egytag.com/x-api/upload/file',
-        data: formData,
-      );
+      final response = await dio.post(ApiConstants.uploadFile, data: formData);
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['done'] == true) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/di/di_container.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../transactions/data/models/payment_method_model.dart';
@@ -24,7 +24,8 @@ class _SelectPaymentMethodView extends StatefulWidget {
   const _SelectPaymentMethodView();
 
   @override
-  State<_SelectPaymentMethodView> createState() => _SelectPaymentMethodViewState();
+  State<_SelectPaymentMethodView> createState() =>
+      _SelectPaymentMethodViewState();
 }
 
 class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
@@ -43,31 +44,37 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
         title: Text(
           'Add Payment Method',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
             onPressed: () {},
-          )
+          ),
         ],
       ),
       body: BlocBuilder<AddPaymentMethodCubit, AddPaymentMethodState>(
         builder: (context, state) {
-          if (state is AddPaymentMethodLoading || state is AddPaymentMethodInitial) {
+          if (state is AddPaymentMethodLoading ||
+              state is AddPaymentMethodInitial) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is AddPaymentMethodError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.message, style: TextStyle(color: colorScheme.error)),
+                  Text(
+                    state.message,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
                   SizedBox(height: 16.h),
                   ElevatedButton(
-                    onPressed: () => context.read<AddPaymentMethodCubit>().fetchAvailableMethods(),
+                    onPressed: () => context
+                        .read<AddPaymentMethodCubit>()
+                        .fetchAvailableMethods(),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -86,14 +93,19 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
     return Stack(
       children: [
         ListView(
-          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
+          padding: EdgeInsets.only(
+            left: 20.w,
+            right: 20.w,
+            top: 20.h,
+            bottom: 100.h,
+          ),
           children: [
             Center(
               child: Text(
                 'Add Payment Details',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             SizedBox(height: 8.h),
@@ -101,14 +113,18 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
               child: Text(
                 'Choose a payment method to add your payment details.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
             SizedBox(height: 32.h),
-            ...methods.map((method) => Padding(
-                  padding: EdgeInsets.only(bottom: 12.h),
-                  child: _buildMethodOption(context, method),
-                )),
+            ...methods.map(
+              (method) => Padding(
+                padding: EdgeInsets.only(bottom: 12.h),
+                child: _buildMethodOption(context, method),
+              ),
+            ),
           ],
         ),
         Positioned(
@@ -121,11 +137,20 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
                 : () {
                     final code = _selectedMethod!.code.toLowerCase();
                     if (code == 'trc' || code == 'erc' || code == 'btc') {
-                      context.pushNamed(RoutesNames.addCryptoPayment, extra: _selectedMethod);
+                      context.pushNamed(
+                        RoutesNames.addCryptoPayment,
+                        extra: _selectedMethod,
+                      );
                     } else if (code == 'visa' || code == 'mastercard') {
-                      context.pushNamed(RoutesNames.addCardPayment, extra: _selectedMethod);
+                      context.pushNamed(
+                        RoutesNames.addCardPayment,
+                        extra: _selectedMethod,
+                      );
                     } else if (code == 'bank' || code == 'localpay') {
-                      context.pushNamed(RoutesNames.addBankPayment, extra: _selectedMethod);
+                      context.pushNamed(
+                        RoutesNames.addBankPayment,
+                        extra: _selectedMethod,
+                      );
                     }
                   },
             style: ElevatedButton.styleFrom(
@@ -136,10 +161,7 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
             ),
             child: Text(
               'Continue',
-              style: TextStyle(
-                fontSize: 16.s,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16.s, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -155,7 +177,8 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
     IconData iconData = Icons.payment;
     if (code == 'bank' || code == 'localpay') iconData = Icons.account_balance;
     if (code == 'visa' || code == 'mastercard') iconData = Icons.credit_card;
-    if (code == 'trc' || code == 'erc' || code == 'btc') iconData = Icons.currency_bitcoin;
+    if (code == 'trc' || code == 'erc' || code == 'btc')
+      iconData = Icons.currency_bitcoin;
 
     String subtitle = '';
     if (code == 'trc') subtitle = 'Tether (Tron Network)';
@@ -173,9 +196,13 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
       child: Container(
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.3) : colorScheme.surfaceContainerLowest,
+          color: isSelected
+              ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+              : colorScheme.surfaceContainerLowest,
           border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: isSelected ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(16.r),
@@ -198,8 +225,8 @@ class _SelectPaymentMethodViewState extends State<_SelectPaymentMethodView> {
                   Text(
                     method.name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   if (subtitle.isNotEmpty) ...[
                     SizedBox(height: 2.h),

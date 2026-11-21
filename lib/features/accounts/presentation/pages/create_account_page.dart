@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../../../../core/di/di_container.dart';
 import '../../../../core/componants/async_dropdownmenu.dart';
 import '../cubit/create_account_cubit.dart';
 import '../cubit/create_account_state.dart';
 import '../../data/models/create_account_models.dart';
-import '../cubit/accounts_cubit.dart';
+import '../widgets/account_created_sheet.dart';
 
 class CreateAccountPage extends StatelessWidget {
   const CreateAccountPage({super.key});
@@ -28,7 +27,7 @@ class _CreateAccountView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -38,13 +37,14 @@ class _CreateAccountView extends StatelessWidget {
         centerTitle: true,
       ),
       body: BlocConsumer<CreateAccountCubit, CreateAccountState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is CreateAccountSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Account Created Successfully'.tr())),
-            );
-            context.read<AccountsCubit>().fetchAccounts();
-            Navigator.of(context).pop();
+            // Show the real result returned by the backend (account code,
+            // approval status, MT5 details), then hand `true` back to the
+            // accounts list so it reloads.
+            await AccountCreatedSheet.show(context, state.account);
+            if (!context.mounted) return;
+            Navigator.of(context).pop(true);
           } else if (state is CreateAccountError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -58,12 +58,12 @@ class _CreateAccountView extends StatelessWidget {
           if (state is CreateAccountLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           bool isReal = true;
           AccountTypeModel? selectedAccountType;
           LeverageModel? selectedLeverage;
           OpeningBalanceModel? selectedOpeningBalance;
-          
+
           if (state is CreateAccountFormUpdated) {
             isReal = state.isReal;
             selectedAccountType = state.selectedAccountType;
@@ -80,7 +80,7 @@ class _CreateAccountView extends StatelessWidget {
               children: [
                 _buildToggle(context, isReal, cubit),
                 SizedBox(height: 24.s),
-                
+
                 if (isReal) ...[
                   Text('Account Type'.tran, style: _labelStyle(theme)),
                   SizedBox(height: 8.s),
@@ -91,7 +91,7 @@ class _CreateAccountView extends StatelessWidget {
                     onView: (item) => item?.name,
                     onChanged: (val) => cubit.setAccountType(val),
                   ),
-                  
+
                   if (selectedAccountType != null) ...[
                     SizedBox(height: 8.s),
                     Text(
@@ -150,7 +150,10 @@ class _CreateAccountView extends StatelessWidget {
                   ),
                   child: Text(
                     'Create'.tran,
-                    style: TextStyle(fontSize: 16.s, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16.s,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -162,18 +165,21 @@ class _CreateAccountView extends StatelessWidget {
   }
 
   TextStyle _labelStyle(ThemeData theme) {
-    return TextStyle(
-      fontSize: 14.s,
-      fontWeight: FontWeight.w600,
-    );
+    return TextStyle(fontSize: 14.s, fontWeight: FontWeight.w600);
   }
 
-  Widget _buildToggle(BuildContext context, bool isReal, CreateAccountCubit cubit) {
+  Widget _buildToggle(
+    BuildContext context,
+    bool isReal,
+    CreateAccountCubit cubit,
+  ) {
     final theme = Theme.of(context);
-    
+
     return Container(
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[200],
+        color: theme.brightness == Brightness.dark
+            ? Colors.grey[800]
+            : Colors.grey[200],
         borderRadius: BorderRadius.circular(12.s),
       ),
       padding: EdgeInsets.all(4.s),
@@ -192,7 +198,11 @@ class _CreateAccountView extends StatelessWidget {
                 child: Text(
                   'Real'.tran,
                   style: TextStyle(
-                    color: isReal ? Colors.white : (theme.brightness == Brightness.dark ? Colors.white : Colors.black),
+                    color: isReal
+                        ? Colors.white
+                        : (theme.brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -212,7 +222,11 @@ class _CreateAccountView extends StatelessWidget {
                 child: Text(
                   'Demo'.tran,
                   style: TextStyle(
-                    color: !isReal ? Colors.white : (theme.brightness == Brightness.dark ? Colors.white : Colors.black),
+                    color: !isReal
+                        ? Colors.white
+                        : (theme.brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black),
                     fontWeight: FontWeight.bold,
                   ),
                 ),

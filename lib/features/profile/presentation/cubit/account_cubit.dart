@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 import '../../../auth/data/repository/user_access.dart';
 import 'package:boker/core/errors/failure.dart';
 import 'package:boker/core/di/di_container.dart';
@@ -12,11 +11,7 @@ class AccountCubit extends Cubit<AccountState> {
 
   void syncUser() {
     final user = UserAccess.user;
-    emit(
-      state.copyWith(
-        user: user,
-      ),
-    );
+    emit(state.copyWith(user: user));
   }
 
   Future<Either<Failure, bool>> updatePasswordProfile({

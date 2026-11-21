@@ -60,7 +60,6 @@ abstract class AuthRepository {
 
   Future<Either<Failure, UserModel>> getCurrentUser();
 
-
   Future<Either<Failure, bool>> updatePasswordProfile({
     required String oldPassword,
     required String newPassword,
@@ -207,7 +206,6 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserModel>> getCurrentUser() async {
     return await _remoteDataSource.getCurrentUser();
   }
-
 
   @override
   Future<Either<Failure, bool>> updatePasswordProfile({

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 extension ShimmerEffect on Widget {
-  Widget applyShimmer(
-      {bool enable = true, Color? baseColor, Color? highlightColor}) {
+  Widget applyShimmer({
+    bool enable = true,
+    Color? baseColor,
+    Color? highlightColor,
+  }) {
     if (enable) {
       return Shimmer.fromColors(
         baseColor: baseColor ?? Colors.grey.shade800,
@@ -16,4 +19,3 @@ extension ShimmerEffect on Widget {
     }
   }
 }
-

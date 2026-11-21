@@ -1,5 +1,3 @@
-
-
 import '../../errors/failure.dart';
 
 // OTP Service Handler for sending and verifying OTPs

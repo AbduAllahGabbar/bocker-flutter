@@ -2,10 +2,7 @@ class ContactPageModel {
   final String detailsEn;
   final String detailsAr;
 
-  const ContactPageModel({
-    required this.detailsEn,
-    required this.detailsAr,
-  });
+  const ContactPageModel({required this.detailsEn, required this.detailsAr});
 
   factory ContactPageModel.fromJson(Map<String, dynamic> json) {
     final page = json['contact_page'] as Map<String, dynamic>? ?? json;

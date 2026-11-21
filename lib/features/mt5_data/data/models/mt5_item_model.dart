@@ -81,7 +81,9 @@ class Mt5ItemModel {
           ? Mt5Transaction.fromJson(json['transaction'] as Map<String, dynamic>)
           : null,
       bonusTransaction: json['bonusTransaction'] != null
-          ? Mt5BonusTransaction.fromJson(json['bonusTransaction'] as Map<String, dynamic>)
+          ? Mt5BonusTransaction.fromJson(
+              json['bonusTransaction'] as Map<String, dynamic>,
+            )
           : null,
       type: _parseString(json['type']),
       volume: _parseNum(json['volume']),
@@ -96,20 +98,122 @@ class Mt5ItemModel {
     );
   }
 
-  String get displayTicket => ticket ?? id ?? '';
-  String get displaySymbol => symbol ?? '';
-  num get displayVolume => volume ?? lots ?? 0.0;
-  num get displayProfit => profit ?? amount ?? 0.0;
-  String get displayType => type ?? action ?? eventType ?? '';
-  num get displayOpenPrice => openPrice ?? priceOpen ?? 0.0;
-  num get displayClosePrice => closePrice ?? priceClose ?? 0.0;
-  num get displaySl => sl ?? 0.0;
-  num get displayTp => tp ?? 0.0;
-  num get displayCommission => commission ?? 0.0;
-  num get displaySwap => swap ?? 0.0;
-  num get displayBonus => bonusTransaction?.amount ?? (entryLabel == 'bonus' ? amount ?? 0.0 : 0.0);
-  String get displayOpenTime => openTime?.toIso8601String() ?? time?.toIso8601String() ?? '-';
-  String get displayCloseTime => closeTime?.toIso8601String() ?? '-';
+  static const Set<String> _statusActions = {
+    'pending',
+    'approved',
+    'rejected',
+    'canceled',
+    'cancelled',
+    'completed',
+    'processing',
+    'failed',
+    'done',
+  };
+
+  bool get _actionIsStatus =>
+      action != null && _statusActions.contains(action!.toLowerCase());
+
+  static String? _clean(String? value) {
+    if (value == null) return null;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed == 'null') return null;
+    return trimmed;
+  }
+
+  /// Order id shown in the list (ticket for MT5 deals, document id for CRM).
+  String get displayTicket =>
+      _clean(ticket) ??
+      _clean(transaction?.mt5DealTicket) ??
+      _clean(bonusTransaction?.mt5Ticket) ??
+      _clean(id) ??
+      '-';
+
+  String get displaySymbol => _clean(symbol) ?? '';
+
+  /// `lots` is what the api sends, `volume` only exists on raw mt5 payloads.
+  num get displayVolume => lots ?? volume ?? 0;
+
+  /// The money of the row: deposits / withdrawals / transfers carry it in
+  /// `amount`, open positions carry it in `profit`.
+  num get displayAmount {
+    if (amount != null && amount != 0) return amount!;
+    if (profit != null && profit != 0) return profit!;
+    if (credit != null && credit != 0) return credit!;
+    if (transaction?.amount != null && transaction!.amount != 0) {
+      return transaction!.amount!;
+    }
+    return amount ?? profit ?? 0;
+  }
+
+  /// Floating / realised P/L only (never falls back to `amount`).
+  num get displayProfit => profit ?? 0;
+
+  num get displayCredit => credit ?? 0;
+
+  /// Deposit / Withdrawal / Transfer / Balance / buy / sell ...
+  String get displayType {
+    final value =
+        _clean(eventType) ??
+        _clean(type) ??
+        _clean(transaction?.type) ??
+        (_actionIsStatus ? null : _clean(action));
+    return value ?? '';
+  }
+
+  /// pending / approved / ... (shown as a chip next to the type).
+  String get displayStatus =>
+      _clean(transaction?.transactionStatus?.name) ??
+      _clean(transaction?.transactionStatus?.code) ??
+      _clean(bonusTransaction?.status) ??
+      (_actionIsStatus ? action! : '');
+
+  /// buy / sell for trades, empty for cash movements.
+  String get displayDirection => _actionIsStatus ? '' : (_clean(action) ?? '');
+
+  /// `Deposit (Pending)` like the web table.
+  String get displayTypeLabel {
+    final type = displayType;
+    final status = displayStatus;
+    if (type.isEmpty) return status.isEmpty ? '-' : status;
+    if (status.isEmpty || status.toLowerCase() == type.toLowerCase()) {
+      return type;
+    }
+    return '$type ($status)';
+  }
+
+  String get displaySource => _clean(source) ?? '';
+
+  String get displayPaymentMethod =>
+      _clean(transaction?.paymentMethod?.name) ??
+      _clean(transaction?.paymentMethod?.code) ??
+      '';
+
+  String get displayComment =>
+      _clean(comment) ?? _clean(transaction?.comment) ?? '';
+
+  num get displayOpenPrice => openPrice ?? priceOpen ?? 0;
+  num get displayClosePrice => closePrice ?? priceClose ?? 0;
+  num get displaySl => sl ?? 0;
+  num get displayTp => tp ?? 0;
+  num get displayCommission => commission ?? 0;
+  num get displaySwap => swap ?? 0;
+  num get displayBonus =>
+      bonusTransaction?.amount ??
+      ((_clean(entryLabel)?.toLowerCase() == 'bonus') ? (amount ?? 0) : 0);
+
+  DateTime? get openDateTime => openTime ?? time;
+  DateTime? get closeDateTime => closeTime;
+
+  String get displayOpenTime => _formatDate(openDateTime);
+  String get displayCloseTime => _formatDate(closeDateTime);
+
+  static String _formatDate(DateTime? value) {
+    if (value == null) return '-';
+    final local = value.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(local.day)}/${two(local.month)}/${local.year} '
+        '${two(local.hour)}:${two(local.minute)}';
+  }
 }
 
 class Mt5Transaction {
@@ -165,12 +269,21 @@ class Mt5Transaction {
       code: _parseString(json['code']),
       type: _parseString(json['type']),
       amount: _parseNum(json['amount']),
-      account: json['account'] != null ? Mt5Account.fromJson(json['account']) : null,
-      accountTo: json['accountTo'] != null ? Mt5Account.fromJson(json['accountTo']) : null,
-      paymentMethod: json['paymentMethod'] != null ? Mt5PaymentMethod.fromJson(json['paymentMethod']) : null,
-      paymentMethodDetails: json['paymentMethodDetails'] as Map<String, dynamic>?,
+      account: json['account'] != null
+          ? Mt5Account.fromJson(json['account'])
+          : null,
+      accountTo: json['accountTo'] != null
+          ? Mt5Account.fromJson(json['accountTo'])
+          : null,
+      paymentMethod: json['paymentMethod'] != null
+          ? Mt5PaymentMethod.fromJson(json['paymentMethod'])
+          : null,
+      paymentMethodDetails:
+          json['paymentMethodDetails'] as Map<String, dynamic>?,
       comment: _parseString(json['comment']),
-      transactionStatus: json['transactionStatus'] != null ? Mt5TransactionStatus.fromJson(json['transactionStatus']) : null,
+      transactionStatus: json['transactionStatus'] != null
+          ? Mt5TransactionStatus.fromJson(json['transactionStatus'])
+          : null,
       user: json['user'] != null ? Mt5User.fromJson(json['user']) : null,
       addUserInfo: json['addUserInfo'] as Map<String, dynamic>?,
       editUserInfo: json['editUserInfo'] as Map<String, dynamic>?,
@@ -299,7 +412,10 @@ class Mt5Account {
   factory Mt5Account.fromJson(dynamic json) {
     if (json is String) return Mt5Account(sId: json);
     if (json is Map<String, dynamic>) {
-      return Mt5Account(sId: _parseString(json['_id']), id: _parseNum(json['id']));
+      return Mt5Account(
+        sId: _parseString(json['_id']),
+        id: _parseNum(json['id']),
+      );
     }
     return const Mt5Account();
   }
@@ -329,7 +445,10 @@ class Mt5PaymentMethod {
   factory Mt5PaymentMethod.fromJson(dynamic json) {
     if (json is String) return Mt5PaymentMethod(code: json);
     if (json is Map<String, dynamic>) {
-      return Mt5PaymentMethod(code: _parseString(json['code']), name: _parseString(json['name']));
+      return Mt5PaymentMethod(
+        code: _parseString(json['code']),
+        name: _parseString(json['name']),
+      );
     }
     return const Mt5PaymentMethod();
   }
@@ -344,7 +463,10 @@ class Mt5TransactionStatus {
   factory Mt5TransactionStatus.fromJson(dynamic json) {
     if (json is String) return Mt5TransactionStatus(code: json);
     if (json is Map<String, dynamic>) {
-      return Mt5TransactionStatus(code: _parseString(json['code']), name: _parseString(json['name']));
+      return Mt5TransactionStatus(
+        code: _parseString(json['code']),
+        name: _parseString(json['name']),
+      );
     }
     return const Mt5TransactionStatus();
   }

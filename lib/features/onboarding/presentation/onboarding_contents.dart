@@ -9,4 +9,3 @@ class OnboardingContents {
     required this.desc,
   });
 }
-

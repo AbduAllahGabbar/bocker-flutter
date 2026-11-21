@@ -11,6 +11,7 @@ import '../../features/accounts/data/data_source/accounts_remote_data_source.dar
 import '../../features/accounts/data/repositories/accounts_repository.dart';
 import '../../features/accounts/presentation/cubit/accounts_cubit.dart';
 import '../../features/accounts/presentation/cubit/create_account_cubit.dart';
+import '../../features/accounts/presentation/cubit/default_account_cubit.dart';
 import '../network/dio/dio_factory.dart';
 import 'package:dio/dio.dart';
 import '../../features/transactions/data/data_source/transactions_remote_data_source.dart';
@@ -28,6 +29,10 @@ import '../../features/ib_dashboard/data/data_source/ib_remote_data_source.dart'
 import '../../features/ib_dashboard/data/repositories/ib_repository.dart';
 import '../../features/ib_dashboard/presentation/cubit/ib_dashboard_cubit.dart';
 import '../../features/ib_dashboard/presentation/cubit/ib_transactions_cubit.dart';
+import '../../features/notifications/data/data_source/notifications_remote_data_source.dart';
+import '../../features/notifications/data/repositories/notifications_repository.dart';
+import '../../features/notifications/presentation/cubit/notification_counters_cubit.dart';
+import '../../features/notifications/presentation/cubit/notifications_cubit.dart';
 
 final di = GetIt.instance;
 
@@ -75,7 +80,9 @@ class DI {
     }
     if (!di.isRegistered<ProfileRepository>()) {
       di.registerFactory<ProfileRepository>(
-        () => ProfileRepositoryImpl(remoteDataSource: di<ProfileRemoteDataSource>()),
+        () => ProfileRepositoryImpl(
+          remoteDataSource: di<ProfileRemoteDataSource>(),
+        ),
       );
     }
     return di<ProfileRepository>();
@@ -98,7 +105,9 @@ class DI {
     }
     if (!di.isRegistered<AccountsRepository>()) {
       di.registerFactory<AccountsRepository>(
-        () => AccountsRepositoryImpl(remoteDataSource: di<AccountsRemoteDataSource>()),
+        () => AccountsRepositoryImpl(
+          remoteDataSource: di<AccountsRemoteDataSource>(),
+        ),
       );
     }
     return di<AccountsRepository>();
@@ -107,15 +116,27 @@ class DI {
   static AccountsCubit initAccounts() {
     if (!di.isRegistered<AccountsCubit>()) {
       di.registerFactory<AccountsCubit>(
-       () =>  AccountsCubit(accountsRepository: initAccountsRepository()),
+        () => AccountsCubit(accountsRepository: initAccountsRepository()),
       );
     }
     return di<AccountsCubit>();
   }
+
+  /// The default account lives for the whole app session, so it is a
+  /// singleton - every screen reads and writes the same selection.
+  static DefaultAccountCubit initDefaultAccount() {
+    if (!di.isRegistered<DefaultAccountCubit>()) {
+      di.registerLazySingleton<DefaultAccountCubit>(
+        () => DefaultAccountCubit(),
+      );
+    }
+    return di<DefaultAccountCubit>();
+  }
+
   static CreateAccountCubit initCreateAccount() {
     if (!di.isRegistered<CreateAccountCubit>()) {
       di.registerFactory<CreateAccountCubit>(
-            () => CreateAccountCubit(repository: initAccountsRepository()),
+        () => CreateAccountCubit(repository: initAccountsRepository()),
       );
     }
     return di<CreateAccountCubit>();
@@ -129,7 +150,9 @@ class DI {
     }
     if (!di.isRegistered<TransactionsRepository>()) {
       di.registerFactory<TransactionsRepository>(
-        () => TransactionsRepositoryImpl(remoteDataSource: di<TransactionsRemoteDataSource>()),
+        () => TransactionsRepositoryImpl(
+          remoteDataSource: di<TransactionsRemoteDataSource>(),
+        ),
       );
     }
     return di<TransactionsRepository>();
@@ -138,7 +161,7 @@ class DI {
   static TransactionsCubit initTransactions() {
     if (!di.isRegistered<TransactionsCubit>()) {
       di.registerFactory<TransactionsCubit>(
-       () =>  TransactionsCubit(repository: initTransactionsRepository()),
+        () => TransactionsCubit(repository: initTransactionsRepository()),
       );
     }
     return di<TransactionsCubit>();
@@ -147,7 +170,7 @@ class DI {
   static AddTransactionCubit initAddTransaction() {
     if (!di.isRegistered<AddTransactionCubit>()) {
       di.registerFactory<AddTransactionCubit>(
-       () =>  AddTransactionCubit(repository: initTransactionsRepository()),
+        () => AddTransactionCubit(repository: initTransactionsRepository()),
       );
     }
     return di<AddTransactionCubit>();
@@ -161,7 +184,9 @@ class DI {
     }
     if (!di.isRegistered<PaymentMethodsRepository>()) {
       di.registerFactory<PaymentMethodsRepository>(
-        () => PaymentMethodsRepositoryImpl(remoteDataSource: di<PaymentMethodsRemoteDataSource>()),
+        () => PaymentMethodsRepositoryImpl(
+          remoteDataSource: di<PaymentMethodsRemoteDataSource>(),
+        ),
       );
     }
     return di<PaymentMethodsRepository>();
@@ -170,7 +195,7 @@ class DI {
   static PaymentMethodsCubit initPaymentMethods() {
     if (!di.isRegistered<PaymentMethodsCubit>()) {
       di.registerFactory<PaymentMethodsCubit>(
-       () => PaymentMethodsCubit(repository: initPaymentMethodsRepository()),
+        () => PaymentMethodsCubit(repository: initPaymentMethodsRepository()),
       );
     }
     return di<PaymentMethodsCubit>();
@@ -179,7 +204,7 @@ class DI {
   static AddPaymentMethodCubit initAddPaymentMethod() {
     if (!di.isRegistered<AddPaymentMethodCubit>()) {
       di.registerFactory<AddPaymentMethodCubit>(
-       () => AddPaymentMethodCubit(repository: initPaymentMethodsRepository()),
+        () => AddPaymentMethodCubit(repository: initPaymentMethodsRepository()),
       );
     }
     return di<AddPaymentMethodCubit>();
@@ -202,10 +227,10 @@ class DI {
   static Mt5DataCubit initMt5Data() {
     if (!di.isRegistered<Mt5DataCubit>()) {
       di.registerFactory<Mt5DataCubit>(
-       () => Mt5DataCubit(
-         accountsRepository: initAccountsRepository(),
-         mt5Repository: initMt5Repository(),
-       ),
+        () => Mt5DataCubit(
+          accountsRepository: initAccountsRepository(),
+          mt5Repository: initMt5Repository(),
+        ),
       );
     }
     return di<Mt5DataCubit>();
@@ -235,6 +260,40 @@ class DI {
       );
     }
     return di<IbDashboardCubit>();
+  }
+
+  static NotificationsRepository initNotificationsRepository() {
+    if (!di.isRegistered<NotificationsRemoteDataSource>()) {
+      di.registerFactory<NotificationsRemoteDataSource>(
+        () => NotificationsRemoteDataSourceImpl(dio: di<Dio>()),
+      );
+    }
+    if (!di.isRegistered<NotificationsRepository>()) {
+      di.registerFactory<NotificationsRepository>(
+        () => NotificationsRepositoryImpl(
+          remoteDataSource: di<NotificationsRemoteDataSource>(),
+        ),
+      );
+    }
+    return di<NotificationsRepository>();
+  }
+
+  /// App-wide unread counters - a singleton so the bell badge, the profile and
+  /// the notifications screen all read the same numbers.
+  static NotificationCountersCubit initNotificationCounters() {
+    if (!di.isRegistered<NotificationCountersCubit>()) {
+      di.registerSingleton<NotificationCountersCubit>(
+        NotificationCountersCubit(repository: initNotificationsRepository()),
+      );
+    }
+    return di<NotificationCountersCubit>();
+  }
+
+  static NotificationsCubit initNotifications() {
+    return NotificationsCubit(
+      repository: initNotificationsRepository(),
+      counters: initNotificationCounters(),
+    );
   }
 
   static IbTransactionsCubit initIbTransactionsCubit(String typeCode) {

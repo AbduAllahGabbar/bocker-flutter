@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/config/language/language_manager.dart';
 
 class MyPhoneFromField extends StatelessWidget {
@@ -14,7 +14,6 @@ class MyPhoneFromField extends StatelessWidget {
   final Color? enableBorderColor;
   final String? label;
   final String? hint;
-  final ResHelper? res;
   MyPhoneFromField({
     super.key,
     this.controller,
@@ -24,7 +23,7 @@ class MyPhoneFromField extends StatelessWidget {
     this.label,
     this.hint,
     this.borderRadius,
-    this.enableBorderColor, this.res,
+    this.enableBorderColor,
   }) : initPhone =
            ((initPhone?.isNotEmpty ?? false) &&
                initPhone!.split("-").length >= 3)
@@ -39,24 +38,23 @@ class MyPhoneFromField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-  final res = this.res ?? MyRes.of(context);
     return IntlPhoneField(
       initialCountryCode: initPhone?.countryISOCode ?? "OM",
       initialValue: initPhone?.number,
       showDropdownIcon: false,
-      enableDropDown:false,
+      enableDropDown: false,
       showCountryFlag: false,
-      invalidNumberMessage : 'Invalid Mobile Number'.tran,
+      invalidNumberMessage: 'Invalid Mobile Number'.tran,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      style:  Theme.of(context).textTheme.labelMedium?.copyWith(
+      style: Theme.of(context).textTheme.labelMedium?.copyWith(
         fontWeight: FontWeight.w400,
-        fontSize: 14.h
-    ),
-      flagsButtonPadding:  EdgeInsets.symmetric(horizontal: 14.h),
+        fontSize: 14.h,
+      ),
+      flagsButtonPadding: EdgeInsets.symmetric(horizontal: 14.h),
       dropdownTextStyle: theme.textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurface,
-          fontWeight: FontWeight.w500,
-          fontSize: 14.h
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.w500,
+        fontSize: 14.h,
       ),
       decoration: InputDecoration(
         labelText: label,
@@ -64,28 +62,25 @@ class MyPhoneFromField extends StatelessWidget {
         labelStyle: theme.textTheme.bodyMedium?.copyWith(
           color: colorScheme.onSurface,
           fontWeight: FontWeight.w500,
-          fontSize: 14.h
+          fontSize: 14.h,
         ),
         errorMaxLines: 1,
 
         hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w400,
-          fontSize: 14.h
+          fontSize: 14.h,
         ),
         errorStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w400,
-            color: Colors.red,
-            fontSize: 14.h
-        ),
-        counterStyle:   Theme.of(context).textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w400,
-          fontSize: 14.h
-      ),
-
-        contentPadding:  EdgeInsets.symmetric(
-          horizontal: 16.h,
-          vertical: 14.h,
+          color: Colors.red,
+          fontSize: 14.h,
         ),
+        counterStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w400,
+          fontSize: 14.h,
+        ),
+
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 14.h),
         counter: const SizedBox.shrink(),
       ),
       validator: withValidator

@@ -1,7 +1,6 @@
 import 'package:boker/core/utils/constants/app_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:res_reline/my_responsive.dart';
-
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 
 class MyElevatedButton extends StatelessWidget {
   const MyElevatedButton({
@@ -42,7 +41,9 @@ class MyElevatedButton extends StatelessWidget {
     /// Loader
     this.loaderSize = 18,
     this.loaderStrokeWidth = 2,
-    this.loaderColor, this.res, this.height,
+    this.loaderColor,
+    this.res,
+    this.height,
   }) : assert(child != null || label != null, 'Provide child or label');
 
   /// Actions
@@ -82,7 +83,7 @@ class MyElevatedButton extends StatelessWidget {
   final double loaderSize;
   final double loaderStrokeWidth;
   final Color? loaderColor;
-final ResHelper? res ;
+  final ResHelper? res;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -91,16 +92,17 @@ final ResHelper? res ;
     final isDisabled = !enabled || isLoading || onPressed == null;
     final res = this.res ?? MyRes.of(context);
     final style = ButtonStyle(
-
       backgroundColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.disabled)) {
-          return disabledBackgroundColor ?? scheme.onSurface.withValues(alpha: 0.12);
+          return disabledBackgroundColor ??
+              scheme.onSurface.withValues(alpha: 0.12);
         }
         return backgroundColor ?? scheme.primary;
       }),
       foregroundColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.disabled)) {
-          return disabledForegroundColor ?? scheme.onSurface.withValues(alpha: 0.38);
+          return disabledForegroundColor ??
+              scheme.onSurface.withValues(alpha: 0.38);
         }
         return foregroundColor ?? scheme.onPrimary;
       }),
@@ -109,18 +111,18 @@ final ResHelper? res ;
           : null,
       elevation: WidgetStatePropertyAll(elevation ?? 2),
       padding: WidgetStatePropertyAll(
-        padding ??  EdgeInsets.symmetric(horizontal: 20, vertical: 14.h),
+        padding ?? EdgeInsets.symmetric(horizontal: 20, vertical: 14.h),
       ),
       minimumSize: WidgetStatePropertyAll(minimumSize),
       maximumSize: WidgetStatePropertyAll(maximumSize),
       textStyle: WidgetStatePropertyAll(
-        textStyle ?? theme.textTheme.labelLarge?.copyWith(
-          fontSize: 16.h,
-        ),
+        textStyle ?? theme.textTheme.labelLarge?.copyWith(fontSize: 16.h),
       ),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius ?? AppConstants.borderRadius16),
+          borderRadius: BorderRadius.circular(
+            borderRadius ?? AppConstants.borderRadius16,
+          ),
           side: side ?? BorderSide.none,
         ),
       ),
@@ -158,23 +160,16 @@ final ResHelper? res ;
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: alignment,
       children: [
-        if (prefix != null) ...[
-          prefix!,
-          const SizedBox(width: 8),
-        ],
-        Text(label!,
-        style: textStyle,
-        ),
-        if (suffix != null) ...[
-          const SizedBox(width: 8),
-          suffix!,
-        ],
+        if (prefix != null) ...[prefix!, const SizedBox(width: 8)],
+        Text(label!, style: textStyle),
+        if (suffix != null) ...[const SizedBox(width: 8), suffix!],
       ],
     );
   }
 }
 
 enum ButtonVariant { filled, outlined, text }
+
 enum ButtonSize { small, medium, large }
 
 class MyButton extends StatelessWidget {
@@ -265,15 +260,15 @@ class MyButton extends StatelessWidget {
   Widget _buildButton(ButtonStyle style, _ButtonColors colors) {
     final content = isLoading
         ? SizedBox(
-      width: loaderSize ?? 18,
-      height: loaderSize ?? 18,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(
-          loaderColor ?? colors.foreground,
-        ),
-      ),
-    )
+            width: loaderSize ?? 18,
+            height: loaderSize ?? 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                loaderColor ?? colors.foreground,
+              ),
+            ),
+          )
         : _buildContent();
 
     switch (variant) {
@@ -305,15 +300,9 @@ class MyButton extends StatelessWidget {
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (prefix != null) ...[
-          prefix!,
-          const SizedBox(width: 8),
-        ],
+        if (prefix != null) ...[prefix!, const SizedBox(width: 8)],
         Text(label!),
-        if (suffix != null) ...[
-          const SizedBox(width: 8),
-          suffix!,
-        ],
+        if (suffix != null) ...[const SizedBox(width: 8), suffix!],
       ],
     );
   }
@@ -369,10 +358,7 @@ class _ButtonSize {
   final EdgeInsetsGeometry padding;
   final Size minSize;
 
-  _ButtonSize({
-    required this.padding,
-    required this.minSize,
-  });
+  _ButtonSize({required this.padding, required this.minSize});
 }
 
 class _ButtonColors {

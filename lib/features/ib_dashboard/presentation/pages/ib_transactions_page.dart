@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/config/language/language_manager.dart';
 import '../cubit/ib_transactions_cubit.dart';
@@ -35,7 +35,8 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       context.read<IbTransactionsCubit>().fetchTransactions();
     }
   }
@@ -43,27 +44,31 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: [
           Padding(
             padding: EdgeInsets.all(16.r),
             child: TextField(
               controller: _searchController,
-              onChanged: (val) => context.read<IbTransactionsCubit>().onSearchChanged(val),
+              onChanged: (val) =>
+                  context.read<IbTransactionsCubit>().onSearchChanged(val),
               decoration: InputDecoration(
                 hintText: 'Search...'.tran,
-                prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
                   borderSide: BorderSide(color: colorScheme.outlineVariant),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
               ),
             ),
           ),
@@ -79,10 +84,15 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(state.error!, style: TextStyle(color: colorScheme.error)),
+                        Text(
+                          state.error!,
+                          style: TextStyle(color: colorScheme.error),
+                        ),
                         SizedBox(height: 16.h),
                         ElevatedButton(
-                          onPressed: () => context.read<IbTransactionsCubit>().fetchTransactions(isRefresh: true),
+                          onPressed: () => context
+                              .read<IbTransactionsCubit>()
+                              .fetchTransactions(isRefresh: true),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -97,17 +107,25 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () => context.read<IbTransactionsCubit>().fetchTransactions(isRefresh: true),
+                  onRefresh: () => context
+                      .read<IbTransactionsCubit>()
+                      .fetchTransactions(isRefresh: true),
                   child: ListView.separated(
                     controller: _scrollController,
                     padding: EdgeInsets.all(16.r),
                     itemCount: items.length + (state.isLoadingMore ? 1 : 0),
-                    separatorBuilder: (context, index) => SizedBox(height: 12.h),
+                    separatorBuilder: (context, index) =>
+                        SizedBox(height: 12.h),
                     itemBuilder: (context, index) {
                       if (index == items.length) {
-                        return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       }
-                      
+
                       final item = items[index];
                       return _buildTransactionCard(context, item, colorScheme);
                     },
@@ -121,10 +139,16 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
     );
   }
 
-  Widget _buildTransactionCard(BuildContext context, IbTransaction item, ColorScheme colorScheme) {
+  Widget _buildTransactionCard(
+    BuildContext context,
+    IbTransaction item,
+    ColorScheme colorScheme,
+  ) {
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
-    final dateStr = item.date != null ? dateFormat.format(DateTime.tryParse(item.date!) ?? DateTime.now()) : '';
-    
+    final dateStr = item.date != null
+        ? dateFormat.format(DateTime.tryParse(item.date!) ?? DateTime.now())
+        : '';
+
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
@@ -137,7 +161,9 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,11 +187,23 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
           ),
           SizedBox(height: 8.h),
           if (item.user != null) ...[
-            Text('User: ${item.user!.name ?? item.user!.email ?? ''}', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13.sp)),
+            Text(
+              'User: ${item.user!.name ?? item.user!.email ?? ''}',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 13.sp,
+              ),
+            ),
             SizedBox(height: 4.h),
           ],
           if (item.comment != null && item.comment!.isNotEmpty) ...[
-            Text('Comment: ${item.comment}', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12.sp)),
+            Text(
+              'Comment: ${item.comment}',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 12.sp,
+              ),
+            ),
             SizedBox(height: 4.h),
           ],
           Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
@@ -175,12 +213,18 @@ class _IbTransactionsPageState extends State<IbTransactionsPage> {
             children: [
               Text(
                 dateStr,
-                style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12.sp),
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 12.sp,
+                ),
               ),
               if (item.addUserInfo != null)
                 Text(
                   'Added by: ${item.addUserInfo!.name ?? ''}',
-                  style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10.sp),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 10.sp,
+                  ),
                 ),
             ],
           ),

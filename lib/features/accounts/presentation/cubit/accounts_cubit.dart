@@ -6,8 +6,8 @@ class AccountsCubit extends Cubit<AccountsState> {
   final AccountsRepository _accountsRepository;
 
   AccountsCubit({required AccountsRepository accountsRepository})
-      : _accountsRepository = accountsRepository,
-        super(AccountsInitial());
+    : _accountsRepository = accountsRepository,
+      super(AccountsInitial());
 
   Future<void> fetchAccounts() async {
     emit(AccountsLoading());

@@ -26,4 +26,3 @@ class MyDefaultLoader extends StatelessWidget {
     );
   }
 }
-

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:boker/core/services/upload_files_services/upload_files_services.dart';
 import '../../../data/repositories/tickets_repository.dart';
@@ -7,8 +9,8 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
   final TicketsRepository _repository;
   late Map<String, dynamic> _ticket;
 
-  TicketDetailsCubit(this._repository, Map<String, dynamic> initialTicket) 
-      : super(TicketDetailsState.initial(initialTicket)) {
+  TicketDetailsCubit(this._repository, Map<String, dynamic> initialTicket)
+    : super(TicketDetailsState.initial(initialTicket)) {
     _ticket = Map<String, dynamic>.from(initialTicket);
     fetchTicketDetails();
   }
@@ -21,7 +23,12 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
       _ticket = Map<String, dynamic>.from(fullTicket);
       emit(TicketDetailsState.success(_ticket));
     } catch (e) {
-      emit(TicketDetailsState.error(_ticket, "Failed to load ticket details: ${e.toString()}"));
+      emit(
+        TicketDetailsState.error(
+          _ticket,
+          _describe(e, "Failed to load ticket details"),
+        ),
+      );
       emit(TicketDetailsState.success(_ticket)); // revert back to old data UI
     }
   }
@@ -35,12 +42,7 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
     try {
       final ticketId = int.parse(_ticket['id'].toString());
 
-      Map<String, dynamic> payload = {
-        "id": ticketId,
-        "desc": desc,
-      };
-
-      Map<String, dynamic>? uploadedFileMap;
+      Map<String, dynamic> payload = {"id": ticketId, "desc": desc};
 
       if (filePath != null) {
         final uploadResult = isImage
@@ -49,10 +51,14 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
 
         uploadResult.fold(
           (failure) {
-            emit(TicketDetailsState.error(_ticket, "Upload failed: ${failure.message}"));
+            emit(
+              TicketDetailsState.error(
+                _ticket,
+                "Upload failed: ${failure.message}",
+              ),
+            );
           },
           (fileData) {
-            uploadedFileMap = fileData;
             payload["file"] = fileData;
           },
         );
@@ -62,21 +68,32 @@ class TicketDetailsCubit extends Cubit<TicketDetailsState> {
 
       await _repository.replyTicket(payload);
 
-      // Optimistically update the ticket
-      final replies = List<dynamic>.from(_ticket['replyList'] ?? []);
-      replies.add({
-        "desc": desc,
-        "date": DateTime.now().toIso8601String(),
-        "user": {"name": "Me"}, // simple mock for UI
-        "file": ?uploadedFileMap,
-      });
-      _ticket['replyList'] = replies;
-      _ticket['isReplied'] = true;
-
-      emit(TicketDetailsState.success(_ticket));
+      // Re-read the ticket so the thread shows the reply exactly as the
+      // backend stored it, instead of a locally fabricated entry.
+      await fetchTicketDetails();
     } catch (e) {
-      emit(TicketDetailsState.error(_ticket, "Failed to send reply: ${e.toString()}"));
+      emit(
+        TicketDetailsState.error(_ticket, _describe(e, "Failed to send reply")),
+      );
       emit(TicketDetailsState.success(_ticket));
+
+      // The reply may have been refused because the ticket was closed while
+      // the page was open: re-read it so the thread and the composer match
+      // the ticket's real state.
+      if (_looksClosed(e)) unawaited(fetchTicketDetails());
     }
   }
+
+  /// The backend's own wording when it sent one, without the `Exception: `
+  /// wrapper Dart adds.
+  String _describe(Object error, String fallback) {
+    var text = error.toString().trim();
+    if (text.startsWith('Exception:')) {
+      text = text.substring('Exception:'.length).trim();
+    }
+    return text.isEmpty ? fallback : text;
+  }
+
+  bool _looksClosed(Object error) =>
+      error.toString().toLowerCase().contains('closed');
 }

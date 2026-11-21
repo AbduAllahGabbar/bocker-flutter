@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/config/routes/routes_manager.dart';
 import '../../../../core/di/di_container.dart';
 import '../../data/models/user_payment_method_model.dart';
@@ -36,9 +36,9 @@ class _PaymentMethodsView extends StatelessWidget {
         title: Text(
           'Payment Details',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -51,10 +51,15 @@ class _PaymentMethodsView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.message, style: TextStyle(color: colorScheme.error)),
+                  Text(
+                    state.message,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
                   SizedBox(height: 16.h),
                   ElevatedButton(
-                    onPressed: () => context.read<PaymentMethodsCubit>().fetchPaymentMethods(),
+                    onPressed: () => context
+                        .read<PaymentMethodsCubit>()
+                        .fetchPaymentMethods(),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -69,20 +74,29 @@ class _PaymentMethodsView extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, List<UserPaymentMethodModel> methods) {
+  Widget _buildContent(
+    BuildContext context,
+    List<UserPaymentMethodModel> methods,
+  ) {
     return RefreshIndicator(
-      onRefresh: () => context.read<PaymentMethodsCubit>().fetchPaymentMethods(),
+      onRefresh: () =>
+          context.read<PaymentMethodsCubit>().fetchPaymentMethods(),
       child: Stack(
         children: [
           ListView(
-            padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
+            padding: EdgeInsets.only(
+              left: 20.w,
+              right: 20.w,
+              top: 20.h,
+              bottom: 100.h,
+            ),
             children: [
               Text(
                 'Saved Payment Methods',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18.s,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.s,
+                ),
               ),
               SizedBox(height: 16.h),
               if (methods.isEmpty)
@@ -91,14 +105,18 @@ class _PaymentMethodsView extends StatelessWidget {
                     padding: EdgeInsets.symmetric(vertical: 40.h),
                     child: Text(
                       'No saved payment methods',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
-              ...methods.map((method) => Padding(
-                    padding: EdgeInsets.only(bottom: 12.h),
-                    child: _buildPaymentMethodCard(context, method),
-                  )),
+              ...methods.map(
+                (method) => Padding(
+                  padding: EdgeInsets.only(bottom: 12.h),
+                  child: _buildPaymentMethodCard(context, method),
+                ),
+              ),
             ],
           ),
           Positioned(
@@ -119,7 +137,10 @@ class _PaymentMethodsView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30.r),
                 ),
               ),
-              icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+              icon: Icon(
+                Icons.add,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
               label: Text(
                 'Add Payment Method',
                 style: TextStyle(
@@ -135,12 +156,15 @@ class _PaymentMethodsView extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentMethodCard(BuildContext context, UserPaymentMethodModel method) {
+  Widget _buildPaymentMethodCard(
+    BuildContext context,
+    UserPaymentMethodModel method,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     IconData iconData = Icons.payment;
     Color iconBgColor = colorScheme.surfaceContainerHighest;
     Color iconColor = colorScheme.onSurfaceVariant;
-    
+
     final code = method.paymentMethod.code.toLowerCase();
 
     if (code == 'bank') {
@@ -190,14 +214,26 @@ class _PaymentMethodsView extends StatelessWidget {
                 Text(
                   method.paymentMethod.name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 4.h),
                 if (code == 'bank') ...[
-                  _buildDetailText('Beneficiary: ', method.beneficiaryName ?? '-', context),
-                  _buildDetailText('Account: ', _maskAccount(method.accountNumber), context),
-                  _buildDetailText('SWIFT: ', _maskSwift(method.swiftCode), context),
+                  _buildDetailText(
+                    'Beneficiary: ',
+                    method.beneficiaryName ?? '-',
+                    context,
+                  ),
+                  _buildDetailText(
+                    'Account: ',
+                    _maskAccount(method.accountNumber),
+                    context,
+                  ),
+                  _buildDetailText(
+                    'SWIFT: ',
+                    _maskSwift(method.swiftCode),
+                    context,
+                  ),
                 ] else if (code == 'visa' || code == 'mastercard') ...[
                   Text(
                     _maskCard(method.cardNumber),
@@ -223,14 +259,12 @@ class _PaymentMethodsView extends StatelessWidget {
             onSelected: (value) {
               if (value == 'delete') {
                 _showDeleteConfirmation(context, method);
+              } else if (value == 'edit') {
+                _startEdit(context, method);
               }
-              // TODO: Handle edit actions
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Text('Edit'),
-              ),
+              const PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
               const PopupMenuItem<String>(
                 value: 'delete',
                 child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -242,13 +276,67 @@ class _PaymentMethodsView extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, UserPaymentMethodModel method) {
+  /// Starts the edit flow.
+  ///
+  /// The backend has no update endpoint, so an edit saves a new entry and
+  /// removes the old one. That is explained up front rather than hidden
+  /// behind a button that silently behaves differently than it reads.
+  Future<void> _startEdit(
+    BuildContext context,
+    UserPaymentMethodModel method,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit payment method'),
+        content: const Text(
+          'Saving your changes replaces this payment method with a new one. '
+          'The current details will be removed once the new ones are saved.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final code = method.paymentMethod.code.toLowerCase();
+    final routeName = switch (code) {
+      'visa' || 'mastercard' => RoutesNames.addCardPayment,
+      'bank' => RoutesNames.addBankPayment,
+      _ => RoutesNames.addCryptoPayment,
+    };
+
+    final changed = await context.pushNamed(
+      routeName,
+      extra: {'method': method.paymentMethod, 'replacing': method},
+    );
+
+    if (changed == true && context.mounted) {
+      context.read<PaymentMethodsCubit>().fetchPaymentMethods();
+    }
+  }
+
+  void _showDeleteConfirmation(
+    BuildContext context,
+    UserPaymentMethodModel method,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Delete Payment Method'),
-          content: Text('Are you sure you want to delete ${method.paymentMethod.name}?'),
+          content: Text(
+            'Are you sure you want to delete ${method.paymentMethod.name}?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -257,7 +345,9 @@ class _PaymentMethodsView extends StatelessWidget {
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
-                context.read<PaymentMethodsCubit>().deletePaymentMethod(method.code);
+                context.read<PaymentMethodsCubit>().deletePaymentMethod(
+                  method.code,
+                );
               },
               child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
@@ -301,7 +391,7 @@ class _PaymentMethodsView extends StatelessWidget {
 
   String _maskAccount(String? account) {
     if (account == null || account.isEmpty) return '......';
-    return '......1234'; 
+    return '......1234';
   }
 
   String _maskSwift(String? swift) {

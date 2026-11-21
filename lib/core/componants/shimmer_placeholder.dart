@@ -18,18 +18,15 @@ class ShimmerPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
-      margin: margin,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-    )
-    .animate(onPlay: (controller) => controller.repeat())
-    .shimmer(
-      duration: 1200.ms,
-      color: Colors.grey[100],
-    );
+          width: width,
+          height: height,
+          margin: margin,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        )
+        .animate(onPlay: (controller) => controller.repeat())
+        .shimmer(duration: 1200.ms, color: Colors.grey[100]);
   }
 }

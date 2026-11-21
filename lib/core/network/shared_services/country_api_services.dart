@@ -59,28 +59,23 @@ class CountryModel {
 class CountryApiServices {
   final Dio dio;
 
-  CountryApiServices({Dio?dio}):dio = dio ?? DioFactory().getDio();
+  CountryApiServices({Dio? dio}) : dio = dio ?? DioFactory().getDio();
 
   List<CountryModel>? _cachedCountries;
 
   // Get all countries from API (cached in memory after first load)
   Future<List<CountryModel>> fetchCountries({bool forceRefresh = false}) async {
-    if (!forceRefresh && _cachedCountries != null && _cachedCountries!.isNotEmpty) {
+    if (!forceRefresh &&
+        _cachedCountries != null &&
+        _cachedCountries!.isNotEmpty) {
       return _cachedCountries!;
     }
     try {
       final response = await dio.post(
         '/countries/all',
         data: {
-          "select": {
-            "id": 1,
-            "name": 1,
-            "image": 1,
-            "callingCode": 1
-          },
-          "where": {
-            "active": true
-          }
+          "select": {"id": 1, "name": 1, "callingCode": 1},
+          "where": {"active": true},
         },
       );
 

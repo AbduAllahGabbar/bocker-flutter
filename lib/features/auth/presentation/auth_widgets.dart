@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/utils/constants/app_constants.dart';
 import '../../../core/componants/my_from_field.dart';
 
@@ -53,7 +53,7 @@ class AuthTextField extends StatelessWidget {
             fontSize: 14.h,
           ),
         ),
-         SizedBox(height: 2.h),
+        SizedBox(height: 2.h),
         MyTextFormField(
           controller: controller,
           validator: validator,
@@ -83,7 +83,7 @@ class AuthButton extends StatelessWidget {
   final Color? textColor;
   final Widget? icon;
   final FontWeight? fontWeight;
-final ResHelper res;
+  final ResHelper res;
   const AuthButton({
     super.key,
     required this.text,
@@ -92,7 +92,8 @@ final ResHelper res;
     this.backgroundColor,
     this.textColor,
     this.icon,
-    this.fontWeight, required this.res,
+    this.fontWeight,
+    required this.res,
   });
 
   @override
@@ -127,7 +128,7 @@ final ResHelper res;
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (icon != null) ...[icon!,  SizedBox(width: 8.h)],
+                  if (icon != null) ...[icon!, SizedBox(width: 8.h)],
                   Text(
                     text,
                     style: theme.textTheme.titleMedium?.copyWith(

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import 'package:boker/core/componants/toast.dart';
 import 'package:boker/core/config/language/language_manager.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:boker/core/componants/my_from_field.dart';
+import 'package:boker/core/componants/password_requirements_panel.dart';
+import 'package:boker/core/utils/password_policy.dart';
 import 'package:boker/features/profile/presentation/cubit/account_cubit.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -23,6 +25,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   bool _obscureOld = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+  String _newPassword = '';
 
   @override
   void dispose() {
@@ -49,7 +52,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         ToastState.error.snackBar(context, failure.message);
       },
       (success) {
-        ToastState.success.snackBar(context, 'Password changed successfully'.tran);
+        ToastState.success.snackBar(
+          context,
+          'Password changed successfully'.tran,
+        );
         context.pop();
       },
     );
@@ -58,10 +64,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Change Password'.tran),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text('Change Password'.tran), centerTitle: true),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.s),
         child: Form(
@@ -74,7 +77,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 label: 'Old Password'.tran,
                 obscureText: _obscureOld,
                 onToggle: () => setState(() => _obscureOld = !_obscureOld),
-                validator: (val) => val == null || val.isEmpty ? 'Required'.tran : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required'.tran : null,
               ),
               SizedBox(height: 16.s),
               _buildPasswordField(
@@ -82,17 +86,22 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 label: 'New Password'.tran,
                 obscureText: _obscureNew,
                 onToggle: () => setState(() => _obscureNew = !_obscureNew),
-                validator: (val) => val == null || val.isEmpty ? 'Required'.tran : null,
+                onChanged: (val) => setState(() => _newPassword = val),
+                validator: PasswordPolicy.validate,
               ),
+              SizedBox(height: 12.s),
+              PasswordRequirementsPanel(password: _newPassword),
               SizedBox(height: 16.s),
               _buildPasswordField(
                 controller: _confirmPasswordController,
                 label: 'Confirm Password'.tran,
                 obscureText: _obscureConfirm,
-                onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                onToggle: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Required'.tran;
-                  if (val != _newPasswordController.text) return 'Passwords do not match'.tran;
+                  if (val != _newPasswordController.text)
+                    return 'Passwords do not match'.tran;
                   return null;
                 },
               ),
@@ -113,7 +122,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       )
                     : Text(
                         'Submit'.tran,
-                        style: TextStyle(fontSize: 16.s, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16.s,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
               ),
             ],
@@ -129,11 +141,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     required bool obscureText,
     required VoidCallback onToggle,
     required String? Function(String?) validator,
+    ValueChanged<String>? onChanged,
   }) {
     return MyTextFormField(
       controller: controller,
       isPassword: obscureText,
       validator: validator,
+      onChanged: onChanged,
       labelText: label,
       suffixIcon: obscureText ? Icons.visibility_off : Icons.visibility,
       suffixOnPressed: onToggle,

@@ -6,19 +6,13 @@ class AccountState {
   final UserModel? user;
   final bool isSigningOut;
 
-  const AccountState({
-    required this.user,
-    this.isSigningOut = false,
-  });
+  const AccountState({required this.user, this.isSigningOut = false});
 
   factory AccountState.initial(UserModel? user) {
     return AccountState(user: user);
   }
 
-  AccountState copyWith({
-    Object? user = _sentinel,
-    bool? isSigningOut,
-  }) {
+  AccountState copyWith({Object? user = _sentinel, bool? isSigningOut}) {
     return AccountState(
       user: identical(user, _sentinel) ? this.user : user as UserModel?,
       isSigningOut: isSigningOut ?? this.isSigningOut,
@@ -37,7 +31,6 @@ class AccountState {
     if (fullName != null && fullName.isNotEmpty) {
       return fullName;
     }
-
 
     final emailName = currentUser.email.split('@').first.trim();
     return emailName.isEmpty ? 'User' : emailName;

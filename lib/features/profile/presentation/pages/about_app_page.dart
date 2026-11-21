@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:res_reline/my_responsive.dart';
+import 'package:boker/core/packages/res_reline/my_responsive.dart';
 import '../../../../core/config/language/language_manager.dart';
 
 class AboutAppPage extends StatelessWidget {
@@ -41,18 +41,20 @@ class AboutAppPage extends StatelessWidget {
             context: context,
             title: 'About Us'.tran,
             icon: Icons.info_outline_rounded,
-            onTap: (){},
+            onTap: () {},
           ),
           _buildMenuCard(
             context: context,
             title: 'Contact Us'.tran,
             icon: Icons.contact_support_outlined,
-            onTap: (){},          ),
+            onTap: () {},
+          ),
           _buildMenuCard(
             context: context,
             title: 'Legal'.tran,
             icon: Icons.gavel_outlined,
-            onTap: (){},          ),
+            onTap: () {},
+          ),
         ],
       ),
     );
@@ -87,11 +89,7 @@ class AboutAppPage extends StatelessWidget {
                   color: Colors.grey.shade50,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.black87,
-                  size: 20.r,
-                ),
+                child: Icon(icon, color: Colors.black87, size: 20.r),
               ),
               SizedBox(width: 12.w),
               Expanded(

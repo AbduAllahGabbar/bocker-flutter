@@ -1,4 +1,4 @@
-package com.example.boker
+package com.boker.app
 
 import io.flutter.embedding.android.FlutterActivity
 
